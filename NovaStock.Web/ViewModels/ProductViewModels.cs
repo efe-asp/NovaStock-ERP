@@ -30,6 +30,9 @@ public class ProductFormViewModel
     [MaxLength(50)]
     public string  SKU               { get; set; } = string.Empty;
 
+    [MaxLength(100)]
+    public string? Barcode           { get; set; }
+
     public string? Description       { get; set; }
 
     [Required, Range(0.01, double.MaxValue, ErrorMessage = "Fiyat 0'dan büyük olmalıdır.")]

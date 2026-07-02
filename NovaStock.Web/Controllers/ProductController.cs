@@ -53,7 +53,8 @@ public class ProductController : Controller
             query = query.Where(p =>
                 p.Name.Contains(filter.SearchTerm) ||
                 p.SKU.Contains(filter.SearchTerm)  ||
-                p.Description!.Contains(filter.SearchTerm));
+                (p.Barcode != null && p.Barcode.Contains(filter.SearchTerm)) ||
+                (p.Description != null && p.Description.Contains(filter.SearchTerm)));
 
         if (filter.CategoryId.HasValue)
             query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
@@ -159,6 +160,7 @@ public class ProductController : Controller
         {
             Name               = vm.Name,
             SKU                = vm.SKU,
+            Barcode            = vm.Barcode,
             Description        = vm.Description,
             BasePrice          = vm.BasePrice,
             StockCount         = vm.StockCount,
@@ -190,6 +192,7 @@ public class ProductController : Controller
             Id                 = product.Id,
             Name               = product.Name,
             SKU                = product.SKU,
+            Barcode            = product.Barcode,
             Description        = product.Description,
             BasePrice          = product.BasePrice,
             StockCount         = product.StockCount,
@@ -222,6 +225,7 @@ public class ProductController : Controller
 
         product.Name               = vm.Name;
         product.SKU                = vm.SKU;
+        product.Barcode            = vm.Barcode;
         product.Description        = vm.Description;
         product.BasePrice          = vm.BasePrice;
         product.StockCount         = vm.StockCount;

@@ -15,6 +15,10 @@ public class Product : BaseEntity
     [Required, MaxLength(50)]
     public string SKU { get; set; } = string.Empty;
 
+    /// <summary>Barkod (EAN, UPC, veya özel okutma kodu).</summary>
+    [MaxLength(100)]
+    public string? Barcode { get; set; }
+
     [MaxLength(1000)]
     public string? Description { get; set; }
 

@@ -24,15 +24,19 @@
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-md-8">
+                    <div class="col-md-6">
                         <label class="form-label-nova" asp-for="Name">Ürün Adı *</label>
                         <input asp-for="Name" class="form-nova" placeholder="Örn: Apple iPhone 15 Pro" />
                         <span asp-validation-for="Name" style="color:var(--red);font-size:12px"></span>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label-nova" asp-for="SKU">SKU Kodu *</label>
                         <input asp-for="SKU" class="form-nova" placeholder="Örn: APL-IPH15P" />
                         <span asp-validation-for="SKU" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-nova" asp-for="Barcode">Barkod</label>
+                        <input asp-for="Barcode" class="form-nova barcode-input" placeholder="Okutun veya yazın" />
                     </div>
                     <div class="col-12">
                         <label class="form-label-nova" asp-for="Description">Açıklama</label>
