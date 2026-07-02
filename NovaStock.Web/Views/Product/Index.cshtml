@@ -1,0 +1,218 @@
+@model IEnumerable<NovaStock.Web.Models.Product>
+@{
+    ViewData["Title"] = "Ürün Yönetimi";
+    var filter = ViewBag.Filter as NovaStock.Web.ViewModels.ProductFilterViewModel
+                 ?? new NovaStock.Web.ViewModels.ProductFilterViewModel();
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-box-open" style="color:var(--accent-light);margin-right:10px"></i>Ürün Yönetimi</h1>
+        <div class="breadcrumb-nova">Toplam @ViewBag.TotalCount ürün · Sayfa @filter.Page / @ViewBag.TotalPages</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+        @if (User.IsInRole("Admin"))
+        {
+            <label class="btn-nova-outline" for="excelImport" style="cursor:pointer">
+                <i class="fa-solid fa-file-arrow-up"></i> Excel Yükle
+            </label>
+            <form method="post" action="/Product/ImportExcel" enctype="multipart/form-data" style="display:none">
+                @Html.AntiForgeryToken()
+                <input id="excelImport" type="file" name="file" accept=".xlsx,.xls"
+                       onchange="this.form.submit()">
+            </form>
+        }
+        <a href="/Product/ExportExcel" class="btn-nova-outline">
+            <i class="fa-solid fa-file-excel"></i> Excel İndir
+        </a>
+        @if (User.IsInRole("Admin"))
+        {
+            <a href="/Product/Create" class="btn-nova">
+                <i class="fa-solid fa-plus"></i> Yeni Ürün
+            </a>
+        }
+    </div>
+</div>
+
+<!-- ── Smart Search / Filter ──────────────────────────────────────────────── -->
+<div class="glass-card p-3 mb-4">
+    <form method="get" action="/Product" class="row g-2 align-items-end">
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label-nova">Arama</label>
+            <input name="SearchTerm" value="@filter.SearchTerm" class="form-nova"
+                   placeholder="Ürün adı veya SKU..." />
+        </div>
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label-nova">Kategori</label>
+            <select name="CategoryId" class="form-nova">
+                <option value="">Tümü</option>
+                @if (ViewBag.Categories is Microsoft.AspNetCore.Mvc.Rendering.SelectList cats)
+                {
+                    foreach (var c in cats)
+                    {
+                        if (filter.CategoryId?.ToString() == c.Value)
+                        {
+                            <option value="@c.Value" selected>@c.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@c.Value">@c.Text</option>
+                        }
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-4">
+            <label class="form-label-nova">Min Fiyat (₺)</label>
+            <input name="MinPrice" type="number" step="0.01" value="@filter.MinPrice" class="form-nova" placeholder="0" />
+        </div>
+        <div class="col-lg-2 col-md-4">
+            <label class="form-label-nova">Max Fiyat (₺)</label>
+            <input name="MaxPrice" type="number" step="0.01" value="@filter.MaxPrice" class="form-nova" placeholder="∞" />
+        </div>
+        <div class="col-lg-1 col-md-4">
+            <div style="display:flex;flex-direction:column;gap:8px">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);cursor:pointer">
+                    <input name="InStockOnly" type="checkbox" value="true" @(filter.InStockOnly ? "checked" : "") style="accent-color:var(--accent)">
+                    Stokta
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--red);cursor:pointer">
+                    <input name="CriticalOnly" type="checkbox" value="true" @(filter.CriticalOnly ? "checked" : "") style="accent-color:var(--red)">
+                    Kritik
+                </label>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn-nova" style="flex:1">
+                    <i class="fa-solid fa-magnifying-glass"></i> Filtrele
+                </button>
+                <a href="/Product" class="btn-nova-outline" style="padding:9px 12px">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ── Product Table ─────────────────────────────────────────────────────── -->
+<div class="glass-card">
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead>
+                <tr>
+                    <th style="width:40px">#</th>
+                    <th>
+                        <a href="?SortBy=Name&SortOrder=@(filter.SortBy=="Name" && filter.SortOrder=="asc" ? "desc" : "asc")&SearchTerm=@filter.SearchTerm"
+                           style="color:inherit;text-decoration:none">
+                            ÜRÜN <i class="fa-solid fa-sort" style="opacity:0.4"></i>
+                        </a>
+                    </th>
+                    <th>KATEGORİ</th>
+                    <th>
+                        <a href="?SortBy=Price&SortOrder=@(filter.SortBy=="Price" && filter.SortOrder=="asc" ? "desc" : "asc")&SearchTerm=@filter.SearchTerm"
+                           style="color:inherit;text-decoration:none">
+                            TABAN FİYAT <i class="fa-solid fa-sort" style="opacity:0.4"></i>
+                        </a>
+                    </th>
+                    <th>BRONZE</th><th>SILVER</th><th>GOLD</th>
+                    <th>
+                        <a href="?SortBy=Stock&SortOrder=@(filter.SortBy=="Stock" && filter.SortOrder=="asc" ? "desc" : "asc")&SearchTerm=@filter.SearchTerm"
+                           style="color:inherit;text-decoration:none">
+                            STOK <i class="fa-solid fa-sort" style="opacity:0.4"></i>
+                        </a>
+                    </th>
+                    <th>DURUM</th>
+                    @if (User.IsInRole("Admin")) { <th>İŞLEM</th> }
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var p in Model)
+            {
+                var isCritical = p.StockCount <= p.CriticalStockLevel;
+                var bronzeP = (p.BasePrice).ToString("N2");
+                var silverP = (p.BasePrice * 0.95m).ToString("N2");
+                var goldP   = (p.BasePrice * 0.90m).ToString("N2");
+
+                <tr class="@(isCritical ? "critical-row" : "")">
+                    <td style="color:var(--text-muted);font-size:12px">@p.Id</td>
+                    <td>
+                        <div style="font-weight:600;font-size:13px">@p.Name</div>
+                        <div style="font-size:11px;color:var(--text-muted);font-family:monospace">@p.SKU</div>
+                    </td>
+                    <td><span class="badge-nova badge-cyan">@p.Category?.Name</span></td>
+                    <td style="font-weight:700;font-size:14px">@p.BasePrice.ToString("N2") ₺</td>
+                    <td style="font-size:12px;color:var(--bronze)">@bronzeP ₺</td>
+                    <td style="font-size:12px;color:var(--silver)">@silverP ₺</td>
+                    <td style="font-size:12px;color:var(--gold)">@goldP ₺</td>
+                    <td>
+                        @if (isCritical)
+                        {
+                            <span class="badge-nova badge-red critical-badge">
+                                <i class="fa-solid fa-circle-exclamation"></i> @p.StockCount
+                            </span>
+                        }
+                        else if (p.StockCount == 0)
+                        {
+                            <span class="badge-nova badge-red">Tükendi</span>
+                        }
+                        else
+                        {
+                            <span style="color:var(--green);font-weight:600">@p.StockCount</span>
+                        }
+                    </td>
+                    <td>
+                        @if (p.IsActive)
+                        {
+                            <span class="badge-nova badge-green">Aktif</span>
+                        }
+                        else
+                        {
+                            <span class="badge-nova badge-gray">Pasif</span>
+                        }
+                    </td>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <td>
+                            <div style="display:flex;gap:6px">
+                                <a href="/Product/Edit/@p.Id" class="btn-nova" style="padding:5px 10px;font-size:11px">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <form method="post" action="/Product/Delete/@p.Id"
+                                      onsubmit="return confirm('@p.Name silinecek. Devam edilsin mi?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-danger-nova">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    }
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="10" style="text-align:center;padding:50px;color:var(--text-muted)">
+                    <i class="fa-solid fa-box-open" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>
+                    Filtreye uygun ürün bulunamadı.
+                </td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Sayfalama -->
+    @if ((int)ViewBag.TotalPages > 1)
+    {
+        <div style="padding:16px 20px;border-top:1px solid var(--border-glass);display:flex;justify-content:center;gap:6px">
+            @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+            {
+                <a href="?Page=@i&SearchTerm=@filter.SearchTerm&CategoryId=@filter.CategoryId&SortBy=@filter.SortBy&SortOrder=@filter.SortOrder"
+                   style="width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;text-decoration:none;
+                          @(filter.Page == i ? "background:var(--accent);color:#fff" : "background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border-glass)")">
+                    @i
+                </a>
+            }
+        </div>
+    }
+</div>

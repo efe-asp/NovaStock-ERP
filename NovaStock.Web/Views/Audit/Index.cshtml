@@ -1,0 +1,103 @@
+@model IEnumerable<NovaStock.Web.Models.AuditLog>
+@{
+    ViewData["Title"] = "Denetim Günlüğü";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-shield-halved" style="color:var(--cyan);margin-right:10px"></i>Denetim Günlüğü</h1>
+        <div class="breadcrumb-nova">Toplam @ViewBag.Total kayıt · Sayfa @ViewBag.Page / @ViewBag.TotalPages</div>
+    </div>
+</div>
+
+<!-- Filtre -->
+<div class="glass-card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <input name="search" value="@ViewBag.Search" class="form-nova" placeholder="Kullanıcı veya açıklama ara..." />
+        </div>
+        <div class="col-md-3">
+            <select name="tableName" class="form-nova">
+                <option value="">Tüm Tablolar</option>
+                @foreach (var t in (List<string>)(ViewBag.TableNames ?? new List<string>()))
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="action" class="form-nova">
+                <option value="">Tüm İşlemler</option>
+                <option value="Added">Ekleme</option>
+                <option value="Modified">Güncelleme</option>
+                <option value="Deleted">Silme</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn-nova" style="width:100%"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+    </form>
+</div>
+
+<div class="glass-card">
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead><tr>
+                <th>ZAMAN</th><th>KULLANICI</th><th>TABLO</th>
+                <th>İŞLEM</th><th>KAYIT ID</th><th>AÇIKLAMA</th>
+            </tr></thead>
+            <tbody>
+            @foreach (var log in Model)
+            {
+                var actionBadge = log.Action switch {
+                    "Added"    => "badge-green",
+                    "Modified" => "badge-yellow",
+                    "Deleted"  => "badge-red",
+                    _ => "badge-gray"
+                };
+                var actionTr = log.Action switch {
+                    "Added"    => "Eklendi",
+                    "Modified" => "Güncellendi",
+                    "Deleted"  => "Silindi",
+                    _ => log.Action
+                };
+                <tr>
+                    <td style="font-size:12px;white-space:nowrap;color:var(--text-muted)">
+                        @log.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")
+                    </td>
+                    <td style="font-size:13px;font-weight:500">
+                        <i class="fa-solid fa-user-circle" style="color:var(--accent-light);margin-right:6px"></i>
+                        @(log.UserName ?? "Sistem")
+                    </td>
+                    <td><span class="badge-nova badge-cyan" style="font-family:monospace;font-size:11px">@log.TableName</span></td>
+                    <td><span class="badge-nova @actionBadge">@actionTr</span></td>
+                    <td style="font-size:12px;font-family:monospace;color:var(--text-muted)">@(log.RecordId ?? "-")</td>
+                    <td style="font-size:12px;color:var(--text-secondary);max-width:300px">@log.Description</td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted)">
+                    <i class="fa-solid fa-shield-halved" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>
+                    Kayıt bulunamadı.
+                </td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Sayfalama -->
+    @if ((int)ViewBag.TotalPages > 1)
+    {
+        <div style="padding:16px 20px;border-top:1px solid var(--border-glass);display:flex;justify-content:center;gap:6px">
+            @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+            {
+                <a href="?page=@i&search=@ViewBag.Search"
+                   style="width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;text-decoration:none;
+                          @((int)ViewBag.Page == i ? "background:var(--accent);color:#fff" : "background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border-glass)")">
+                    @i
+                </a>
+            }
+        </div>
+    }
+</div>

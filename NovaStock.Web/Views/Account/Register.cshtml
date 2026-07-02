@@ -1,0 +1,132 @@
+@{
+    ViewData["Title"] = "Hesap Oluştur";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hesap Oluştur – NovaStock ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+        <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Inter',sans-serif;background:#f4f7fb;color:#1e293b;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;overflow-x:hidden}
+        .bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(14,165,233,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.05) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+        .bg-glow{position:fixed;bottom:-200px;right:-100px;width:600px;height:500px;background:radial-gradient(ellipse,rgba(14,165,233,0.1),transparent 70%);pointer-events:none}
+        .register-card{background:rgba(255,255,255,0.9);border:1px solid rgba(0,0,0,0.08);border-radius:20px;padding:36px;width:100%;max-width:520px;position:relative;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,0.05)}
+        .register-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#0ea5e9,#6366f1);border-radius:20px 20px 0 0}
+        .brand{text-align:center;margin-bottom:28px}
+        .brand-icon{width:48px;height:48px;background:linear-gradient(135deg,#0ea5e9,#0891b2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;margin:0 auto 10px;box-shadow:0 0 25px rgba(14,165,233,0.3)}
+        .brand-name{font-size:20px;font-weight:800;background:linear-gradient(90deg,#0ea5e9,#4f46e5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .brand-sub{font-size:12px;color:#64748b;margin-top:3px}
+        .row{display:flex;gap:14px}
+        .col{flex:1}
+        .form-group{margin-bottom:14px}
+        .form-label{font-size:12px;font-weight:500;color:#475569;margin-bottom:5px;display:block}
+        .form-input{width:100%;background:#ffffff;border:1px solid rgba(0,0,0,0.15);border-radius:10px;color:#1e293b;padding:10px 14px;font-size:13px;font-family:'Inter',sans-serif;transition:all 0.2s;outline:none}
+        .form-input:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,0.15)}
+        .form-input-icon{position:relative}
+        .form-input-icon i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#64748b;font-size:13px}
+        .form-input-icon input{padding-left:38px}
+        .btn-register{width:100%;background:linear-gradient(135deg,#0ea5e9,#0891b2);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.25s;font-family:'Inter',sans-serif;margin-top:6px}
+        .btn-register:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(14,165,233,0.35)}
+        .login-link{text-align:center;margin-top:16px;font-size:13px;color:#64748b}
+        .login-link a{color:#4f46e5;text-decoration:none}
+        .validation-msg{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#ef4444}
+        span[data-valmsg-for]{color:#ef4444;font-size:11px;margin-top:3px;display:block}
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <div class="register-card">
+        <div class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-user-plus"></i></div>
+            <div class="brand-name">Bayi Kaydı</div>
+            <div class="brand-sub">NovaStock ERP Sistemi</div>
+        </div>
+
+        <form method="post" asp-action="Register" asp-controller="Account">
+            @Html.AntiForgeryToken()
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label class="form-label">Ad Soyad *</label>
+                        <div class="form-input-icon">
+                            <i class="fa-solid fa-user"></i>
+                            <input name="FullName" class="form-input" placeholder="Ahmet Yılmaz" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label class="form-label">Şirket Adı *</label>
+                        <div class="form-input-icon">
+                            <i class="fa-solid fa-building"></i>
+                            <input name="CompanyName" class="form-input" placeholder="Teknoloji A.Ş." required />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">E-Posta *</label>
+                <div class="form-input-icon">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input name="Email" type="email" class="form-input" placeholder="email@sirket.com" required />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label class="form-label">Vergi No</label>
+                        <input name="TaxNumber" class="form-input" placeholder="1234567890" />
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label class="form-label">Telefon</label>
+                        <input name="Phone" class="form-input" placeholder="0555 000 0000" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label class="form-label">Şifre *</label>
+                        <div class="form-input-icon">
+                            <i class="fa-solid fa-lock"></i>
+                            <input name="Password" type="password" class="form-input" placeholder="Min 6 karakter" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label class="form-label">Şifre Tekrar *</label>
+                        <div class="form-input-icon">
+                            <i class="fa-solid fa-lock-open"></i>
+                            <input name="ConfirmPassword" type="password" class="form-input" placeholder="••••••••" required />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-register">
+                <i class="fa-solid fa-user-plus" style="margin-right:8px"></i>Hesap Oluştur
+            </button>
+        </form>
+
+        <div class="login-link">
+            Zaten hesabınız var mı? <a href="/Account/Login">Giriş Yapın →</a>
+        </div>
+    </div>
+</body>
+</html>
+

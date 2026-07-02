@@ -1,0 +1,51 @@
+@model IEnumerable<NovaStock.Web.Models.Product>
+@{
+    ViewData["Title"] = "Geri Dönüşüm Kutusu";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-trash-can-arrow-up" style="color:var(--yellow);margin-right:10px"></i>Geri Dönüşüm Kutusu</h1>
+        <div class="breadcrumb-nova">Silinen ürünler buradan geri yüklenebilir.</div>
+    </div>
+    <a href="/Product" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Ürünlere Dön</a>
+</div>
+
+<div class="glass-card">
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead><tr>
+                <th>ID</th><th>Ürün Adı</th><th>SKU</th><th>Kategori</th>
+                <th>Silinme Tarihi</th><th>Silen</th><th>İşlem</th>
+            </tr></thead>
+            <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td style="color:var(--text-muted)">@p.Id</td>
+                    <td style="font-weight:600">@p.Name</td>
+                    <td style="font-family:monospace;font-size:12px">@p.SKU</td>
+                    <td><span class="badge-nova badge-cyan">@p.Category?.Name</span></td>
+                    <td style="font-size:12px;color:var(--text-muted)">@p.DeletedAt?.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td style="font-size:12px;color:var(--text-muted)">@(p.DeletedBy ?? "Sistem")</td>
+                    <td>
+                        <form method="post" action="/Product/Restore/@p.Id">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-nova" style="padding:5px 12px;font-size:12px">
+                                <i class="fa-solid fa-rotate-left"></i> Geri Yükle
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" style="text-align:center;padding:50px;color:var(--text-muted)">
+                    <i class="fa-solid fa-trash-can" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>
+                    Geri dönüşüm kutusu boş.
+                </td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,364 @@
+@model NovaStock.Web.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var monthLabelsJson     = System.Text.Json.JsonSerializer.Serialize(Model.MonthLabels);
+    var monthlySalesJson    = System.Text.Json.JsonSerializer.Serialize(Model.MonthlySalesData);
+    var categoryLabelsJson  = System.Text.Json.JsonSerializer.Serialize(Model.CategoryLabels);
+    var categorySalesJson   = System.Text.Json.JsonSerializer.Serialize(Model.CategorySalesData);
+}
+
+<!-- ── Stat Cards ─────────────────────────────────────────────────────────── -->
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-gauge-high" style="color:var(--accent-light);margin-right:10px"></i>Dashboard</h1>
+        <div class="breadcrumb-nova">Hoş geldiniz · @DateTime.Now.ToString("dd MMMM yyyy, HH:mm", new System.Globalization.CultureInfo("tr-TR"))</div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card purple">
+            <div class="stat-icon purple"><i class="fa-solid fa-box-open"></i></div>
+            <div class="stat-value">@Model.TotalProducts</div>
+            <div class="stat-label">Toplam Ürün</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card red">
+            <div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="stat-value">@Model.CriticalStockCount</div>
+            <div class="stat-label">Kritik Stok</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card cyan">
+            <div class="stat-icon cyan"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="stat-value">@Model.TotalCategories</div>
+            <div class="stat-label">Kategori</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card yellow">
+            <div class="stat-icon yellow"><i class="fa-solid fa-cart-shopping"></i></div>
+            <div class="stat-value">@Model.PendingOrders</div>
+            <div class="stat-label">Bekleyen Sipariş</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card green">
+            <div class="stat-icon green"><i class="fa-solid fa-users"></i></div>
+            <div class="stat-value">@Model.TotalDealers</div>
+            <div class="stat-label">Toplam Bayi</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="stat-card purple">
+            <div class="stat-icon purple"><i class="fa-solid fa-turkish-lira-sign"></i></div>
+            <div class="stat-value" style="font-size:18px">@Model.MonthlyRevenue.ToString("N0") ₺</div>
+            <div class="stat-label">Bu Ay Ciro</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Grafikler ──────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    <!-- Aylık Satış Grafiği -->
+    <div class="col-xl-8">
+        <div class="glass-card p-4" style="height:340px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <div>
+                    <div style="font-size:15px;font-weight:600">Aylık Satış Grafiği</div>
+                    <div style="font-size:12px;color:var(--text-muted)">Son 12 Ay</div>
+                </div>
+                <span class="badge-nova badge-purple">Toplam: @Model.TotalRevenue.ToString("N0") ₺</span>
+            </div>
+            <canvas id="salesChart" style="height:240px"></canvas>
+        </div>
+    </div>
+
+    <!-- Kategori Pasta Grafiği -->
+    <div class="col-xl-4">
+        <div class="glass-card p-4" style="height:340px">
+            <div style="font-size:15px;font-weight:600;margin-bottom:4px">Kategori Dağılımı</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Sipariş Adedi</div>
+            <div style="position:relative;height:240px;display:flex;align-items:center;justify-content:center">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Alt Tablolar ───────────────────────────────────────────────────────── -->
+<div class="row g-3">
+    <!-- Son Eklenen Ürünler -->
+    <div class="col-xl-6">
+        <div class="glass-card">
+            <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:15px;font-weight:600"><i class="fa-solid fa-box" style="color:var(--accent-light);margin-right:8px"></i>Son Eklenen Ürünler</div>
+                <a href="/Product" class="btn-nova-outline" style="padding:6px 12px;font-size:12px">Tümünü Gör</a>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="nova-table">
+                    <thead><tr>
+                        <th>Ürün</th><th>Kategori</th><th>Fiyat</th><th>Stok</th>
+                    </tr></thead>
+                    <tbody>
+                    @foreach (var p in Model.RecentProducts)
+                    {
+                        <tr class="@(p.IsCritical ? "critical-row" : "")">
+                            <td>
+                                <div style="font-weight:500;font-size:13px">@p.Name</div>
+                                <div style="font-size:11px;color:var(--text-muted)">@p.SKU</div>
+                            </td>
+                            <td><span class="badge-nova badge-cyan">@p.Category</span></td>
+                            <td style="font-weight:600">@p.Price.ToString("N2") ₺</td>
+                            <td>
+                                @if (p.IsCritical)
+                                {
+                                    <span class="badge-nova badge-red critical-badge">
+                                        <i class="fa-solid fa-circle-exclamation"></i> @p.Stock
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--green);font-weight:600">@p.Stock</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.RecentProducts.Any())
+                    {
+                        <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px">Henüz ürün eklenmemiş.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son Siparişler -->
+    <div class="col-xl-6">
+        <div class="glass-card">
+            <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:15px;font-weight:600"><i class="fa-solid fa-receipt" style="color:var(--yellow);margin-right:8px"></i>Son Siparişler</div>
+                <a href="/Order" class="btn-nova-outline" style="padding:6px 12px;font-size:12px">Tümünü Gör</a>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="nova-table">
+                    <thead><tr><th>Sipariş No</th><th>Bayi</th><th>Tutar</th><th>Durum</th></tr></thead>
+                    <tbody>
+                    @foreach (var o in Model.RecentOrders)
+                    {
+                        var badgeClass = o.Status switch {
+                            "Pending"   => "badge-yellow",
+                            "Approved"  => "badge-cyan",
+                            "Shipped"   => "badge-purple",
+                            "Delivered" => "badge-green",
+                            "Cancelled" => "badge-red",
+                            _           => "badge-gray"
+                        };
+                        var statusTr = o.Status switch {
+                            "Pending"   => "Bekliyor",
+                            "Approved"  => "Onaylandı",
+                            "Shipped"   => "Kargoda",
+                            "Delivered" => "Teslim",
+                            "Cancelled" => "İptal",
+                            _           => o.Status
+                        };
+                        <tr>
+                            <td style="font-family:monospace;font-size:12px">@o.OrderNumber</td>
+                            <td style="font-size:13px">@o.DealerName</td>
+                            <td style="font-weight:600;color:var(--green)">@o.Total.ToString("N2") ₺</td>
+                            <td><span class="badge-nova @badgeClass">@statusTr</span></td>
+                        </tr>
+                    }
+                    @if (!Model.RecentOrders.Any())
+                    {
+                        <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px">Henüz sipariş yok.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Bayiler -->
+    <div class="col-xl-4">
+        <div class="glass-card">
+            <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass)">
+                <div style="font-size:15px;font-weight:600"><i class="fa-solid fa-crown" style="color:var(--gold);margin-right:8px"></i>Top Bayiler</div>
+            </div>
+            <div style="padding:8px 0">
+            @for (int i = 0; i < Model.TopDealers.Count; i++)
+            {
+                var d = Model.TopDealers[i];
+                var tierBadge = d.Tier switch { "Gold" => "badge-gold", "Silver" => "badge-silver", _ => "badge-bronze" };
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border-glass)">
+                    <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#4f46e5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">#@(i+1)</div>
+                    <div style="flex:1">
+                        <div style="font-size:13px;font-weight:600">@d.DealerName</div>
+                        <div style="font-size:11px;color:var(--text-muted)">@d.CompanyName</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-size:13px;font-weight:700;color:var(--green)">@d.TotalSpent.ToString("N0") ₺</div>
+                        <span class="badge-nova @tierBadge" style="font-size:10px">@d.Tier</span>
+                    </div>
+                </div>
+            }
+            @if (!Model.TopDealers.Any())
+            {
+                <div style="text-align:center;color:var(--text-muted);padding:30px">Henüz veri yok.</div>
+            }
+            </div>
+        </div>
+    </div>
+
+    <!-- Kritik Stok Uyarıları -->
+    <div class="col-xl-8">
+        <div class="glass-card">
+            <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass)">
+                <div style="font-size:15px;font-weight:600">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);margin-right:8px;animation:pulse-red 2s infinite"></i>
+                    Kritik Stok Uyarıları
+                    @if (Model.CriticalProducts.Any())
+                    {
+                        <span class="badge-nova badge-red" style="margin-left:8px">@Model.CriticalProducts.Count</span>
+                    }
+                </div>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="nova-table">
+                    <thead><tr><th>Ürün</th><th>Mevcut Stok</th><th>Kritik Eşik</th><th>Durum</th><th>İşlem</th></tr></thead>
+                    <tbody>
+                    @foreach (var c in Model.CriticalProducts)
+                    {
+                        var pct = c.CriticalLevel > 0 ? (int)((double)c.StockCount / c.CriticalLevel * 100) : 0;
+                        <tr class="critical-row">
+                            <td style="font-weight:500">@c.Name</td>
+                            <td>
+                                <span class="badge-nova badge-red critical-badge">
+                                    <i class="fa-solid fa-circle-exclamation"></i> @c.StockCount adet
+                                </span>
+                            </td>
+                            <td style="color:var(--text-muted)">@c.CriticalLevel adet</td>
+                            <td>
+                                <div style="width:80px;height:6px;background:rgba(239,68,68,0.2);border-radius:3px;overflow:hidden">
+                                    <div style="width:@(Math.Min(pct,100))%;height:100%;background:var(--red);border-radius:3px"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="/Product/Edit/@c.Id" class="btn-nova" style="padding:5px 10px;font-size:11px">
+                                    <i class="fa-solid fa-pen"></i> Güncelle
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.CriticalProducts.Any())
+                    {
+                        <tr><td colspan="5" style="text-align:center;padding:30px">
+                            <i class="fa-solid fa-circle-check" style="color:var(--green);font-size:24px;margin-bottom:8px;display:block"></i>
+                            <span style="color:var(--text-muted)">Tüm stoklar normal seviyede.</span>
+                        </td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// ── Chart.js Ayarları ───────────────────────────────────────────────────────
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = 'Inter';
+
+// ── Aylık Satış - Çizgi Grafik ──────────────────────────────────────────────
+const salesCtx = document.getElementById('salesChart').getContext('2d');
+const monthLabels = @Html.Raw(monthLabelsJson);
+const salesData   = @Html.Raw(monthlySalesJson);
+
+const gradient = salesCtx.createLinearGradient(0, 0, 0, 220);
+gradient.addColorStop(0, 'rgba(124,58,237,0.4)');
+gradient.addColorStop(1, 'rgba(124,58,237,0)');
+
+new Chart(salesCtx, {
+    type: 'line',
+    data: {
+        labels: monthLabels,
+        datasets: [{
+            label: 'Aylık Ciro (₺)',
+            data: salesData,
+            borderColor: '#7c3aed',
+            backgroundColor: gradient,
+            borderWidth: 2.5,
+            pointBackgroundColor: '#a78bfa',
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            tension: 0.45,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#0d1322',
+                borderColor: 'rgba(124,58,237,0.4)',
+                borderWidth: 1,
+                titleColor: '#e2e8f0',
+                bodyColor: '#a78bfa',
+                callbacks: {
+                    label: ctx => ' ' + Number(ctx.raw).toLocaleString('tr-TR') + ' ₺'
+                }
+            }
+        },
+        scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 11 } } },
+            y: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: {
+                    font: { size: 11 },
+                    callback: v => v.toLocaleString('tr-TR') + ' ₺'
+                }
+            }
+        }
+    }
+});
+
+// ── Kategori - Donut Grafik ──────────────────────────────────────────────────
+const catCtx    = document.getElementById('categoryChart').getContext('2d');
+const catLabels = @Html.Raw(categoryLabelsJson);
+const catData   = @Html.Raw(categorySalesJson);
+
+new Chart(catCtx, {
+    type: 'doughnut',
+    data: {
+        labels: catLabels,
+        datasets: [{
+            data: catData,
+            backgroundColor: ['#7c3aed','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6'],
+            borderColor: '#070b14',
+            borderWidth: 3,
+            hoverOffset: 8
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { padding: 16, font: { size: 12 }, usePointStyle: true, pointStyleWidth: 8 }
+            },
+            tooltip: {
+                backgroundColor: '#0d1322',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1
+            }
+        }
+    }
+});
+</script>
+}

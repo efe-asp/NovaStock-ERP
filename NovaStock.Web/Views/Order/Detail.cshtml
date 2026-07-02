@@ -1,0 +1,147 @@
+@model NovaStock.Web.Models.Order
+@{
+    ViewData["Title"] = $"Sipariş #{Model.OrderNumber}";
+    var statusTr = Model.Status switch {
+        NovaStock.Web.Models.OrderStatus.Pending   => "Bekliyor",
+        NovaStock.Web.Models.OrderStatus.Approved  => "Onaylandı",
+        NovaStock.Web.Models.OrderStatus.Shipped   => "Kargoda",
+        NovaStock.Web.Models.OrderStatus.Delivered => "Teslim Edildi",
+        NovaStock.Web.Models.OrderStatus.Cancelled => "İptal Edildi",
+        _ => Model.Status.ToString()
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-receipt" style="color:var(--yellow);margin-right:10px"></i>@Model.OrderNumber</h1>
+        <div class="breadcrumb-nova"><a href="/Order" style="color:var(--accent-light);text-decoration:none">Siparişler</a> / @Model.OrderNumber</div>
+    </div>
+    <div style="display:flex;gap:10px">
+        <a href="/Order/DownloadInvoice/@Model.Id" class="btn-nova-outline">
+            <i class="fa-solid fa-file-pdf"></i> Fatura İndir
+        </a>
+        @if (Model.Status is not NovaStock.Web.Models.OrderStatus.Cancelled
+              and not NovaStock.Web.Models.OrderStatus.Delivered)
+        {
+            <form method="post" action="/Order/Cancel/@Model.Id"
+                  onsubmit="return confirm('Sipariş iptal edilsin mi?')">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-danger-nova" style="padding:9px 16px">
+                    <i class="fa-solid fa-ban"></i> İptal Et
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <!-- Ürün Kalemleri -->
+        <div class="glass-card mb-3">
+            <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass)">
+                <div style="font-size:15px;font-weight:600">Sipariş Kalemleri</div>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="nova-table">
+                    <thead><tr><th>ÜRÜN</th><th>KATEGORİ</th><th>BİRİM FİYAT</th><th>ADET</th><th>TOPLAM</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div style="font-weight:600">@item.Product?.Name</div>
+                                <div style="font-size:11px;color:var(--text-muted);font-family:monospace">@item.Product?.SKU</div>
+                            </td>
+                            <td><span class="badge-nova badge-cyan">@item.Product?.Category?.Name</span></td>
+                            <td>@item.UnitPrice.ToString("N2") ₺</td>
+                            <td style="font-weight:600">×@item.Quantity</td>
+                            <td style="font-weight:700;color:var(--green)">@((item.UnitPrice * item.Quantity).ToString("N2")) ₺</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <!-- Toplam -->
+            <div style="padding:16px 20px;border-top:1px solid var(--border-glass)">
+                <div style="display:flex;justify-content:flex-end">
+                    <div style="min-width:280px">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px">
+                            <span style="color:var(--text-muted)">Ara Toplam</span>
+                            <span>@Model.SubTotal.ToString("N2") ₺</span>
+                        </div>
+                        @if (Model.DiscountAmount > 0)
+                        {
+                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px">
+                                <span style="color:var(--red)">Kampanya İndirimi</span>
+                                <span style="color:var(--red)">-@Model.DiscountAmount.ToString("N2") ₺</span>
+                            </div>
+                        }
+                        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border-glass);font-size:18px;font-weight:700">
+                            <span>Genel Toplam</span>
+                            <span style="color:var(--green)">@Model.Total.ToString("N2") ₺</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Sipariş Bilgileri -->
+        <div class="glass-card p-4 mb-3">
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px">Sipariş Bilgileri</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;justify-content:space-between;font-size:13px">
+                    <span style="color:var(--text-muted)">Sipariş No</span>
+                    <span style="font-family:monospace;color:var(--accent-light)">@Model.OrderNumber</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px">
+                    <span style="color:var(--text-muted)">Tarih</span>
+                    <span>@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px">
+                    <span style="color:var(--text-muted)">Durum</span>
+                    <span class="badge-nova @(Model.Status == NovaStock.Web.Models.OrderStatus.Pending ? "badge-yellow" : "badge-green")">@statusTr</span>
+                </div>
+                @if (Model.Warehouse is not null)
+                {
+                    <div style="display:flex;justify-content:space-between;font-size:13px">
+                        <span style="color:var(--text-muted)">Depo</span>
+                        <span>@Model.Warehouse.Name (@Model.Warehouse.City)</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div style="padding-top:8px;border-top:1px solid var(--border-glass);font-size:13px;color:var(--text-muted)">
+                        <div style="margin-bottom:4px;font-weight:600;color:var(--text-secondary)">Not:</div>
+                        @Model.Notes
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Bayi Bilgileri -->
+        <div class="glass-card p-4">
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px">Bayi Bilgileri</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+                <div><i class="fa-solid fa-user" style="color:var(--accent-light);width:16px;margin-right:8px"></i>@Model.Dealer?.FullName</div>
+                <div><i class="fa-solid fa-building" style="color:var(--cyan);width:16px;margin-right:8px"></i>@Model.Dealer?.CompanyName</div>
+                <div><i class="fa-solid fa-envelope" style="color:var(--yellow);width:16px;margin-right:8px"></i>@Model.Dealer?.Email</div>
+                @if (!string.IsNullOrEmpty(Model.Dealer?.Phone))
+                {
+                    <div><i class="fa-solid fa-phone" style="color:var(--green);width:16px;margin-right:8px"></i>@Model.Dealer.Phone</div>
+                }
+                @{
+                    var tierBadge = Model.Dealer?.Tier switch {
+                        NovaStock.Web.Models.DealerTier.Gold   => "badge-gold",
+                        NovaStock.Web.Models.DealerTier.Silver => "badge-silver",
+                        _ => "badge-bronze"
+                    };
+                }
+                <div><i class="fa-solid fa-crown" style="color:var(--gold);width:16px;margin-right:8px"></i>
+                    <span class="badge-nova @tierBadge">@Model.Dealer?.Tier</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

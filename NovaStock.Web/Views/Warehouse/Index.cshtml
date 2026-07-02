@@ -1,0 +1,72 @@
+@model IEnumerable<NovaStock.Web.Models.Warehouse>
+@{
+    ViewData["Title"] = "Depo Yönetimi";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-warehouse" style="color:var(--cyan);margin-right:10px"></i>Depo Yönetimi</h1>
+        <div class="breadcrumb-nova">Çoklu lokasyon stok takibi</div>
+    </div>
+</div>
+
+<div class="row g-3">
+@foreach (var w in Model)
+{
+    var totalQty = w.ProductWarehouses.Sum(pw => pw.Quantity);
+    var productCount = w.ProductWarehouses.Count;
+
+    <div class="col-xl-4 col-md-6">
+        <div class="glass-card p-4">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                <div>
+                    <div style="font-size:16px;font-weight:700">@w.Name</div>
+                    <div style="font-size:13px;color:var(--text-muted);margin-top:3px">
+                        <i class="fa-solid fa-location-dot" style="margin-right:4px;color:var(--accent-light)"></i>@w.City
+                    </div>
+                </div>
+                @if (w.IsActive)
+                {
+                    <span class="badge-nova badge-green">Aktif</span>
+                }
+                else
+                {
+                    <span class="badge-nova badge-gray">Pasif</span>
+                }
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div style="background:rgba(124,58,237,0.08);border-radius:10px;padding:12px;text-align:center">
+                        <div style="font-size:22px;font-weight:800;color:var(--accent-light)">@productCount</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Ürün Çeşidi</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div style="background:rgba(6,182,212,0.08);border-radius:10px;padding:12px;text-align:center">
+                        <div style="font-size:22px;font-weight:800;color:var(--cyan)">@totalQty</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Toplam Stok</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top 5 ürün -->
+            @if (w.ProductWarehouses.Any())
+            {
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Stok Detayı</div>
+                @foreach (var pw in w.ProductWarehouses.OrderByDescending(x => x.Quantity).Take(5))
+                {
+                    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                        <span style="color:var(--text-secondary)">@pw.Product?.Name</span>
+                        <span style="font-weight:600;color:var(--green)">@pw.Quantity</span>
+                    </div>
+                }
+            }
+
+            <a href="/Warehouse/Detail/@w.Id" class="btn-nova-outline" style="width:100%;justify-content:center;margin-top:14px">
+                <i class="fa-solid fa-arrow-right"></i> Detay & Transfer
+            </a>
+        </div>
+    </div>
+}
+</div>

@@ -1,0 +1,25 @@
+# [NEW] .gitignore
+
+# .NET Core / ASP.NET Core build artifacts
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code files
+.vscode/
+
+# User-specific files
+appsettings.Development.json

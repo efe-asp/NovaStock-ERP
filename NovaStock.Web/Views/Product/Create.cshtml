@@ -1,0 +1,149 @@
+@model NovaStock.Web.ViewModels.ProductFormViewModel
+@{
+    ViewData["Title"] = "Yeni Ürün Ekle";
+    bool isEdit = Model.Id > 0;
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-@(isEdit ? "pen" : "plus")" style="color:var(--accent-light);margin-right:10px"></i>
+            @(isEdit ? "Ürün Düzenle" : "Yeni Ürün Ekle")
+        </h1>
+        <div class="breadcrumb-nova"><a href="/Product" style="color:var(--accent-light);text-decoration:none">Ürünler</a> / @(isEdit ? Model.Name : "Yeni")</div>
+    </div>
+    <a href="/Product" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Geri</a>
+</div>
+
+<form method="post" action="/Product/@(isEdit ? $"Edit/{Model.Id}" : "Create")">
+    @Html.AntiForgeryToken()
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-circle-info" style="color:var(--accent-light);margin-right:8px"></i>Temel Bilgiler
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label-nova" asp-for="Name">Ürün Adı *</label>
+                        <input asp-for="Name" class="form-nova" placeholder="Örn: Apple iPhone 15 Pro" />
+                        <span asp-validation-for="Name" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-nova" asp-for="SKU">SKU Kodu *</label>
+                        <input asp-for="SKU" class="form-nova" placeholder="Örn: APL-IPH15P" />
+                        <span asp-validation-for="SKU" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-nova" asp-for="Description">Açıklama</label>
+                        <textarea asp-for="Description" class="form-nova" rows="3" placeholder="Ürün hakkında kısa açıklama..."></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova" asp-for="CategoryId">Kategori *</label>
+                        <select asp-for="CategoryId" class="form-nova">
+                            <option value="">-- Kategori Seçin --</option>
+                            @foreach (var c in Model.Categories)
+                            {
+                                if (Model.CategoryId == c.Id)
+                                {
+                                    <option value="@c.Id" selected>@c.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="CategoryId" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova" asp-for="ImageUrl">Görsel URL (opsiyonel)</label>
+                        <input asp-for="ImageUrl" class="form-nova" placeholder="https://..." />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="glass-card p-4 mb-3">
+                <div style="font-size:15px;font-weight:600;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-turkish-lira-sign" style="color:var(--green);margin-right:8px"></i>Fiyat & Stok
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label-nova" asp-for="BasePrice">Taban Fiyat (₺) *</label>
+                        <input asp-for="BasePrice" type="number" step="0.01" class="form-nova" placeholder="0.00" id="basePriceInput" />
+                        <span asp-validation-for="BasePrice" style="color:var(--red);font-size:12px"></span>
+                    </div>
+
+                    <!-- Bayi fiyat önizlemesi -->
+                    <div class="col-12">
+                        <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:12px">
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600">BAYİ FİYAT ÖNIZLEMESI</div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:12px;color:var(--bronze)"><i class="fa-solid fa-circle"></i> Bronze</span>
+                                <span id="bronzePrice" style="font-size:12px;font-weight:600;color:var(--bronze)">-</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:12px;color:var(--silver)"><i class="fa-solid fa-circle"></i> Silver (-5%)</span>
+                                <span id="silverPrice" style="font-size:12px;font-weight:600;color:var(--silver)">-</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between">
+                                <span style="font-size:12px;color:var(--gold)"><i class="fa-solid fa-circle"></i> Gold (-10%)</span>
+                                <span id="goldPrice" style="font-size:12px;font-weight:600;color:var(--gold)">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <label class="form-label-nova" asp-for="StockCount">Stok Miktarı *</label>
+                        <input asp-for="StockCount" type="number" min="0" class="form-nova" />
+                        <span asp-validation-for="StockCount" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-nova" asp-for="CriticalStockLevel">Kritik Eşik</label>
+                        <input asp-for="CriticalStockLevel" type="number" min="1" class="form-nova" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-gear" style="color:var(--yellow);margin-right:8px"></i>Durum
+                </div>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                    <input asp-for="IsActive" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)">
+                    <span style="font-size:14px">Ürün aktif</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div style="display:flex;gap:12px;justify-content:flex-end">
+                <a href="/Product" class="btn-nova-outline">
+                    <i class="fa-solid fa-xmark"></i> İptal
+                </a>
+                <button type="submit" class="btn-nova">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    @(isEdit ? "Değişiklikleri Kaydet" : "Ürünü Ekle")
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    const basePriceInput = document.getElementById('basePriceInput');
+    function updatePrices() {
+        const base = parseFloat(basePriceInput.value) || 0;
+        const fmt = v => v.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₺';
+        document.getElementById('bronzePrice').textContent = fmt(base);
+        document.getElementById('silverPrice').textContent = fmt(base * 0.95);
+        document.getElementById('goldPrice').textContent   = fmt(base * 0.90);
+    }
+    basePriceInput.addEventListener('input', updatePrices);
+    updatePrices();
+</script>
+}
