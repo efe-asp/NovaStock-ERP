@@ -1,0 +1,112 @@
+@model NovaStock.Web.ViewModels.SettingsViewModel
+@{
+    ViewData["Title"] = "Sistem Ayarları";
+    var dbSizeMb = (Model.DbSizeBytes / 1024.0 / 1024.0).ToString("F2");
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-gear" style="color:var(--accent-light);margin-right:10px"></i>Sistem Ayarları</h1>
+        <div class="breadcrumb-nova">NovaStock Enterprise ERP v@Model.AppVersion</div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Sol: Ayarlar Formu -->
+    <div class="col-xl-7">
+        <!-- SMTP Ayarları -->
+        <div class="glass-card p-4 mb-3">
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--accent)">
+                <i class="fa-solid fa-envelope" style="margin-right:8px"></i>E-posta / SMTP Ayarları
+            </div>
+            <form method="post" action="/Settings/Save">
+                @Html.AntiForgeryToken()
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label-nova">SMTP Sunucusu</label>
+                        <input name="SmtpHost" value="@Model.SmtpHost" class="form-nova" placeholder="smtp.gmail.com" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-nova">Port</label>
+                        <input name="SmtpPort" value="@Model.SmtpPort" class="form-nova" placeholder="587" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Kullanıcı Adı</label>
+                        <input name="SmtpUsername" value="@Model.SmtpUsername" class="form-nova" placeholder="mail@domain.com" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Gönderen Adı</label>
+                        <input name="SmtpFromName" value="@Model.SmtpFromName" class="form-nova" placeholder="NovaStock ERP" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-nova">Admin E-posta (bildirimler için)</label>
+                        <input name="AdminEmail" value="@Model.AdminEmail" class="form-nova" placeholder="admin@firma.com" />
+                    </div>
+                </div>
+
+                <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin:16px 0;font-size:12px;color:var(--yellow)">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    SMTP şifresini güvenlik nedeniyle bu ekrandan değil, doğrudan <code>appsettings.json</code> → <code>Email:Password</code> alanından güncelleyin.
+                </div>
+
+                <button type="submit" class="btn-nova">
+                    <i class="fa-solid fa-floppy-disk"></i> Kaydet
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sağ: Sistem Bilgileri -->
+    <div class="col-xl-5">
+        <!-- İstatistikler -->
+        <div class="glass-card p-4 mb-3">
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--cyan)">
+                <i class="fa-solid fa-circle-info" style="margin-right:8px"></i>Sistem Bilgileri
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
+                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-box-open" style="width:18px;color:var(--accent)"></i> Toplam Ürün</span>
+                    <strong style="color:var(--accent)">@Model.TotalProducts</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
+                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-cart-shopping" style="width:18px;color:var(--cyan)"></i> Toplam Sipariş</span>
+                    <strong style="color:var(--cyan)">@Model.TotalOrders</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
+                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-users" style="width:18px;color:var(--green)"></i> Toplam Kullanıcı</span>
+                    <strong style="color:var(--green)">@Model.TotalUsers</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
+                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-scroll" style="width:18px;color:var(--yellow)"></i> Audit Log Kaydı</span>
+                    <strong style="color:var(--yellow)">@Model.TotalAuditLogs.ToString("N0")</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-database" style="width:18px;color:var(--text-muted)"></i> Veritabanı</span>
+                    <strong style="font-size:12px">@dbSizeMb MB</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Log Temizle -->
+        <div class="glass-card p-4">
+            <div style="font-size:15px;font-weight:600;margin-bottom:12px;color:var(--red)">
+                <i class="fa-solid fa-broom" style="margin-right:8px"></i>Bakım İşlemleri
+            </div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">
+                90 günden eski audit log kayıtlarını silerek veritabanını temizler.
+            </p>
+            <form method="post" action="/Settings/ClearAuditLogs"
+                  onsubmit="return confirm('90 günden eski tüm audit loglar silinecek. Onaylıyor musunuz?')">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-danger-nova" style="width:100%;justify-content:center;padding:10px">
+                    <i class="fa-solid fa-trash-can"></i> Eski Logları Temizle
+                </button>
+            </form>
+
+            <div style="margin-top:14px;padding:12px;background:var(--bg-sidebar);border-radius:8px;font-size:11px;color:var(--text-muted);font-family:monospace">
+                DB: @Model.DatabasePath
+            </div>
+        </div>
+    </div>
+</div>
