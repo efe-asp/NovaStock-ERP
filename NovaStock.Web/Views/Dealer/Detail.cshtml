@@ -1,0 +1,160 @@
+@model NovaStock.Web.ViewModels.DealerDetailViewModel
+@{
+    ViewData["Title"] = $"Bayi – {Model.FullName}";
+    var tierClass = Model.Tier switch {
+        NovaStock.Web.Models.DealerTier.Gold   => "badge-gold",
+        NovaStock.Web.Models.DealerTier.Silver => "badge-silver",
+        _                                       => "badge-bronze"
+    };
+    var tierColor = Model.Tier switch {
+        NovaStock.Web.Models.DealerTier.Gold   => "var(--gold)",
+        NovaStock.Web.Models.DealerTier.Silver => "var(--silver)",
+        _                                       => "var(--bronze)"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-user-tie" style="color:var(--accent-light);margin-right:10px"></i>@Model.FullName</h1>
+        <div class="breadcrumb-nova">@Model.CompanyName · Kayıt: @Model.CreatedAt.ToLocalTime().ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))</div>
+    </div>
+    <div style="display:flex;gap:10px">
+        @if (User.IsInRole("Admin"))
+        {
+            <a href="/Dealer/Edit/@Model.Id" class="btn-nova-outline">
+                <i class="fa-solid fa-pen"></i> Düzenle
+            </a>
+        }
+        <a href="/Dealer" class="btn-nova-outline">
+            <i class="fa-solid fa-arrow-left"></i> Geri
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Profil Kartı -->
+    <div class="col-xl-4">
+        <div class="glass-card p-4" style="border-top:3px solid @tierColor">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+                <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff">
+                    @Model.FullName.Substring(0, 1).ToUpper()
+                </div>
+                <div>
+                    <div style="font-size:18px;font-weight:700">@Model.FullName</div>
+                    <span class="badge-nova @tierClass"><i class="fa-solid fa-crown" style="font-size:9px"></i> @Model.Tier</span>
+                </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+                    <i class="fa-solid fa-building" style="color:var(--text-muted);width:16px"></i>
+                    <span>@Model.CompanyName</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+                    <i class="fa-solid fa-envelope" style="color:var(--text-muted);width:16px"></i>
+                    <span>@Model.Email</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Phone))
+                {
+                    <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+                        <i class="fa-solid fa-phone" style="color:var(--text-muted);width:16px"></i>
+                        <span>@Model.Phone</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.TaxNumber))
+                {
+                    <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+                        <i class="fa-solid fa-file-invoice" style="color:var(--text-muted);width:16px"></i>
+                        <span>Vergi No: @Model.TaxNumber</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Address))
+                {
+                    <div style="display:flex;align-items:flex-start;gap:10px;font-size:13px">
+                        <i class="fa-solid fa-location-dot" style="color:var(--text-muted);width:16px;margin-top:2px"></i>
+                        <span>@Model.Address</span>
+                    </div>
+                }
+            </div>
+
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-glass)">
+                @if (Model.IsActive)
+                {
+                    <span class="badge-nova badge-green"><i class="fa-solid fa-circle-check"></i> Aktif Hesap</span>
+                }
+                else
+                {
+                    <span class="badge-nova badge-red"><i class="fa-solid fa-circle-xmark"></i> Pasif Hesap</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="col-xl-8">
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="glass-card p-4">
+                    <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Toplam Sipariş</div>
+                    <div style="font-size:32px;font-weight:800;color:var(--accent)">@Model.OrderCount</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card p-4">
+                    <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Toplam Harcama</div>
+                    <div style="font-size:22px;font-weight:800;color:var(--green)">@Model.TotalSpent.ToString("N2") ₺</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card p-4">
+                    <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Bekleyen Ödeme</div>
+                    <div style="font-size:22px;font-weight:800;color:var(--yellow)">@Model.PendingAmount.ToString("N2") ₺</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Son Siparişler -->
+        <div class="glass-card">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border-glass);font-size:15px;font-weight:600">
+                <i class="fa-solid fa-receipt" style="color:var(--yellow);margin-right:8px"></i>Son Siparişler
+            </div>
+            <div style="overflow-x:auto">
+                <table class="nova-table">
+                    <thead><tr><th>Sipariş No</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach (var o in Model.RecentOrders)
+                    {
+                        var badge = o.Status switch {
+                            "Pending"   => "badge-yellow",
+                            "Approved"  => "badge-cyan",
+                            "Shipped"   => "badge-purple",
+                            "Delivered" => "badge-green",
+                            "Cancelled" => "badge-red",
+                            _           => "badge-gray"
+                        };
+                        var statusTr = o.Status switch {
+                            "Pending"   => "Bekliyor",
+                            "Approved"  => "Onaylandı",
+                            "Shipped"   => "Kargoda",
+                            "Delivered" => "Teslim",
+                            "Cancelled" => "İptal",
+                            _           => o.Status
+                        };
+                        <tr>
+                            <td style="font-family:monospace;font-size:12px">@o.OrderNumber</td>
+                            <td style="font-weight:700;color:var(--green)">@o.Total.ToString("N2") ₺</td>
+                            <td><span class="badge-nova @badge">@statusTr</span></td>
+                            <td style="font-size:12px;color:var(--text-muted)">@o.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</td>
+                            <td><a href="/Order/Detail/@o.Id" class="btn-nova" style="padding:4px 10px;font-size:11px"><i class="fa-solid fa-eye"></i></a></td>
+                        </tr>
+                    }
+                    @if (!Model.RecentOrders.Any())
+                    {
+                        <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted)">Henüz sipariş yok.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

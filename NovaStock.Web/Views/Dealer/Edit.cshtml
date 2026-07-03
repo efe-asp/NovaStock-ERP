@@ -1,0 +1,57 @@
+@model NovaStock.Web.ViewModels.DealerEditViewModel
+@{
+    ViewData["Title"] = "Bayi Düzenle";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-user-pen" style="color:var(--accent-light);margin-right:10px"></i>Bayi Düzenle</h1>
+        <div class="breadcrumb-nova">@ViewBag.DealerName</div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-xl-5 col-lg-7">
+        <div class="glass-card p-4">
+            <form method="post" action="/Dealer/Edit/@Model.Id">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+
+                <div class="mb-3">
+                    <label class="form-label-nova">Bayi Kademesi</label>
+                    <select name="Tier" class="form-nova">
+                        @foreach (var tier in Enum.GetValues<NovaStock.Web.Models.DealerTier>())
+                        {
+                            if (Model.Tier == tier)
+                            {
+                                <option value="@tier" selected>@tier</option>
+                            }
+                            else
+                            {
+                                <option value="@tier">@tier</option>
+                            }
+                        }
+                    </select>
+                    <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">
+                        <i class="fa-solid fa-info-circle"></i>
+                        Gold: %10 indirim · Silver: %5 indirim · Bronze: Normal fiyat
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+                        <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") style="accent-color:var(--accent);width:16px;height:16px">
+                        Hesap Aktif
+                    </label>
+                </div>
+
+                <div style="display:flex;gap:10px">
+                    <button type="submit" class="btn-nova">
+                        <i class="fa-solid fa-floppy-disk"></i> Kaydet
+                    </button>
+                    <a href="/Dealer/Detail/@Model.Id" class="btn-nova-outline">İptal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,152 @@
+@model IEnumerable<NovaStock.Web.ViewModels.DealerListItem>
+@{
+    ViewData["Title"] = "Bayi Yönetimi";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-users" style="color:var(--accent-light);margin-right:10px"></i>Bayi Yönetimi</h1>
+        <div class="breadcrumb-nova">Toplam @Model.Count() kayıtlı bayi</div>
+    </div>
+</div>
+
+<!-- ── Filtre ─────────────────────────────────────────────────────────────── -->
+<div class="glass-card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-lg-5">
+            <label class="form-label-nova">Arama</label>
+            <input name="search" value="@ViewBag.Search" class="form-nova" placeholder="Ad, şirket veya e-posta..." />
+        </div>
+        <div class="col-lg-3">
+            <label class="form-label-nova">Kademe</label>
+            <select name="tier" class="form-nova">
+                <option value="">Tümü</option>
+                @{
+                    var selectedBronze = ViewBag.TierFilter == "Bronze";
+                    var selectedSilver = ViewBag.TierFilter == "Silver";
+                    var selectedGold   = ViewBag.TierFilter == "Gold";
+                }
+                @if (selectedBronze) { <option value="Bronze" selected>Bronze</option> }
+                else { <option value="Bronze">Bronze</option> }
+                @if (selectedSilver) { <option value="Silver" selected>Silver</option> }
+                else { <option value="Silver">Silver</option> }
+                @if (selectedGold) { <option value="Gold" selected>Gold</option> }
+                else { <option value="Gold">Gold</option> }
+            </select>
+        </div>
+        <div class="col-lg-2">
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn-nova" style="flex:1">
+                    <i class="fa-solid fa-magnifying-glass"></i> Filtrele
+                </button>
+                <a href="/Dealer" class="btn-nova-outline" style="padding:9px 12px">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ── Özet Kartlar ───────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    @{
+        var goldCount   = Model.Count(d => d.Tier == NovaStock.Web.Models.DealerTier.Gold);
+        var silverCount = Model.Count(d => d.Tier == NovaStock.Web.Models.DealerTier.Silver);
+        var bronzeCount = Model.Count(d => d.Tier == NovaStock.Web.Models.DealerTier.Bronze);
+        var activeCount = Model.Count(d => d.IsActive);
+    }
+    <div class="col-lg-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--yellow)">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Gold Bayi</div>
+            <div style="font-size:32px;font-weight:800;color:var(--gold)">@goldCount</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--silver)">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Silver Bayi</div>
+            <div style="font-size:32px;font-weight:800;color:var(--silver)">@silverCount</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--bronze)">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Bronze Bayi</div>
+            <div style="font-size:32px;font-weight:800;color:var(--bronze)">@bronzeCount</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--green)">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Aktif</div>
+            <div style="font-size:32px;font-weight:800;color:var(--green)">@activeCount</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Tablo ──────────────────────────────────────────────────────────────── -->
+<div class="glass-card">
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead>
+                <tr>
+                    <th>BAYİ</th>
+                    <th>ŞİRKET</th>
+                    <th>KADEME</th>
+                    <th>SİPARİŞ</th>
+                    <th>TOPLAM HARCAMA</th>
+                    <th>DURUM</th>
+                    <th>İŞLEM</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var d in Model)
+            {
+                var tierClass = d.Tier switch {
+                    NovaStock.Web.Models.DealerTier.Gold   => "badge-gold",
+                    NovaStock.Web.Models.DealerTier.Silver => "badge-silver",
+                    _                                       => "badge-bronze"
+                };
+                <tr>
+                    <td>
+                        <div style="font-weight:600;font-size:13px">@d.FullName</div>
+                        <div style="font-size:11px;color:var(--text-muted)">@d.Email</div>
+                    </td>
+                    <td style="font-size:13px">@d.CompanyName</td>
+                    <td>
+                        <span class="badge-nova @tierClass">
+                            <i class="fa-solid fa-crown" style="font-size:9px"></i> @d.Tier
+                        </span>
+                    </td>
+                    <td style="font-weight:600;text-align:center">@d.OrderCount</td>
+                    <td style="font-weight:700;color:var(--green)">@d.TotalSpent.ToString("N2") ₺</td>
+                    <td>
+                        @if (d.IsActive)
+                        {
+                            <span class="badge-nova badge-green">Aktif</span>
+                        }
+                        else
+                        {
+                            <span class="badge-nova badge-red">Pasif</span>
+                        }
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px">
+                            <a href="/Dealer/Detail/@d.Id" class="btn-nova" style="padding:5px 10px;font-size:11px">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            <a href="/Dealer/Edit/@d.Id" class="btn-nova-outline" style="padding:5px 10px;font-size:11px">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" style="text-align:center;padding:50px;color:var(--text-muted)">
+                    <i class="fa-solid fa-users" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>
+                    Kayıtlı bayi bulunamadı.
+                </td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
