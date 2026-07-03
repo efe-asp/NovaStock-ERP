@@ -1,0 +1,208 @@
+@model NovaStock.Web.ViewModels.SalesReportViewModel
+@{
+    ViewData["Title"] = "Satış Analitiği";
+    var monthLabelsJson  = System.Text.Json.JsonSerializer.Serialize(Model.MonthLabels);
+    var monthlySalesJson = System.Text.Json.JsonSerializer.Serialize(Model.MonthlySales);
+    var catLabelsJson    = System.Text.Json.JsonSerializer.Serialize(Model.CategoryLabels);
+    var catRevenueJson   = System.Text.Json.JsonSerializer.Serialize(Model.CategoryRevenue);
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-chart-line" style="color:var(--accent-light);margin-right:10px"></i>Satış Analitiği</h1>
+        <div class="breadcrumb-nova">Son 12 aylık detaylı satış raporu</div>
+    </div>
+    @if (User.IsInRole("Admin"))
+    {
+        <a href="/Report/ExportSalesExcel" class="btn-nova-outline">
+            <i class="fa-solid fa-file-excel"></i> Excel İndir
+        </a>
+    }
+</div>
+
+<!-- Özet Kartlar -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--accent)">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Toplam Ciro</div>
+            <div style="font-size:24px;font-weight:800;color:var(--accent)">@Model.TotalRevenue.ToString("N0") ₺</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--green)">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Bu Ay</div>
+            <div style="font-size:24px;font-weight:800;color:var(--green)">@Model.MonthRevenue.ToString("N0") ₺</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--cyan)">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Toplam Sipariş</div>
+            <div style="font-size:24px;font-weight:800;color:var(--cyan)">@Model.TotalOrders</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--yellow)">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Ort. Sipariş Değeri</div>
+            <div style="font-size:24px;font-weight:800;color:var(--yellow)">@Model.AverageOrderValue.ToString("N0") ₺</div>
+        </div>
+    </div>
+</div>
+
+<!-- Grafikler -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-8">
+        <div class="glass-card p-4">
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px">
+                <i class="fa-solid fa-chart-line" style="color:var(--accent);margin-right:8px"></i>Aylık Satış Trendi
+            </div>
+            <div style="position:relative;height:280px">
+                <canvas id="salesTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="glass-card p-4">
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px">
+                <i class="fa-solid fa-chart-pie" style="color:var(--cyan);margin-right:8px"></i>Kategori Bazlı Ciro
+            </div>
+            <div style="position:relative;height:280px">
+                <canvas id="catRevenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tablolar -->
+<div class="row g-3">
+    <!-- En Çok Satan Ürünler -->
+    <div class="col-xl-7">
+        <div class="glass-card">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border-glass);font-size:15px;font-weight:600">
+                <i class="fa-solid fa-trophy" style="color:var(--gold);margin-right:8px"></i>En Çok Satan 10 Ürün
+            </div>
+            <div style="overflow-x:auto">
+                <table class="nova-table">
+                    <thead><tr><th>#</th><th>ÜRÜN</th><th>KATEGORİ</th><th>SATILAN</th><th>CİRO</th></tr></thead>
+                    <tbody>
+                    @for (int i = 0; i < Model.TopProducts.Count; i++)
+                    {
+                        var p = Model.TopProducts[i];
+                        var medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"{i+1}." };
+                        <tr>
+                            <td style="font-size:16px">@medal</td>
+                            <td style="font-weight:600;font-size:13px">@p.Name</td>
+                            <td><span class="badge-nova badge-cyan" style="font-size:10px">@p.Category</span></td>
+                            <td style="font-weight:700;text-align:center">@p.TotalSold</td>
+                            <td style="font-weight:700;color:var(--green)">@p.TotalRevenue.ToString("N2") ₺</td>
+                        </tr>
+                    }
+                    @if (!Model.TopProducts.Any())
+                    {
+                        <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted)">Satış verisi yok.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Bayiler -->
+    <div class="col-xl-5">
+        <div class="glass-card">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border-glass);font-size:15px;font-weight:600">
+                <i class="fa-solid fa-crown" style="color:var(--gold);margin-right:8px"></i>En Çok Harcayan Bayiler
+            </div>
+            <div style="overflow-x:auto">
+                <table class="nova-table">
+                    <thead><tr><th>BAYİ</th><th>KADEME</th><th>SİP.</th><th>HARCAMA</th></tr></thead>
+                    <tbody>
+                    @foreach (var d in Model.TopDealers)
+                    {
+                        var tc = d.Tier switch { "Gold" => "badge-gold", "Silver" => "badge-silver", _ => "badge-bronze" };
+                        <tr>
+                            <td>
+                                <div style="font-weight:600;font-size:13px">@d.DealerName</div>
+                                <div style="font-size:11px;color:var(--text-muted)">@d.CompanyName</div>
+                            </td>
+                            <td><span class="badge-nova @tc" style="font-size:10px">@d.Tier</span></td>
+                            <td style="text-align:center;font-weight:600">@d.OrderCount</td>
+                            <td style="font-weight:700;color:var(--green)">@d.TotalSpent.ToString("N0") ₺</td>
+                        </tr>
+                    }
+                    @if (!Model.TopDealers.Any())
+                    {
+                        <tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-muted)">Sipariş verisi yok.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const CHART_COLORS = ['#6366f1','#06b6d4','#10b981','#f59e0b','#f43f5e','#8b5cf6'];
+
+// Aylık satış trend grafiği
+new Chart(document.getElementById('salesTrendChart'), {
+    type: 'line',
+    data: {
+        labels: @Html.Raw(monthLabelsJson),
+        datasets: [{
+            label: 'Ciro (₺)',
+            data: @Html.Raw(monthlySalesJson),
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,0.1)',
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: '#6366f1',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: v => v.toLocaleString('tr-TR') + ' ₺',
+                    font: { size: 11 }
+                },
+                grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+        }
+    }
+});
+
+// Kategori ciro bar grafiği
+new Chart(document.getElementById('catRevenueChart'), {
+    type: 'doughnut',
+    data: {
+        labels: @Html.Raw(catLabelsJson),
+        datasets: [{
+            data: @Html.Raw(catRevenueJson),
+            backgroundColor: CHART_COLORS,
+            borderWidth: 0,
+            hoverOffset: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ' ' + Number(ctx.parsed).toLocaleString('tr-TR') + ' ₺'
+                }
+            }
+        }
+    }
+});
+</script>
+}

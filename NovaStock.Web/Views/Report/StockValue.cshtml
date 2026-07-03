@@ -1,0 +1,118 @@
+@model NovaStock.Web.ViewModels.StockValueViewModel
+@{
+    ViewData["Title"] = "Stok Değer Raporu";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-warehouse" style="color:var(--accent-light);margin-right:10px"></i>Stok Değer Raporu</h1>
+        <div class="breadcrumb-nova">Anlık stok değeri – @DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))</div>
+    </div>
+</div>
+
+<!-- Özet -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--accent)">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Toplam Stok Değeri</div>
+            <div style="font-size:22px;font-weight:800;color:var(--accent)">@Model.TotalStockValue.ToString("N2") ₺</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">@Model.TotalProductCount ürün</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--red)">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Kritik Stok</div>
+            <div style="font-size:32px;font-weight:800;color:var(--red)">@Model.CriticalCount</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">acil temin edilmeli</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--yellow)">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Tükenmiş</div>
+            <div style="font-size:32px;font-weight:800;color:var(--yellow)">@Model.OutOfStockCount</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">stok sıfır</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card p-4" style="border-left:3px solid var(--green)">
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Ort. Ürün Değeri</div>
+            <div style="font-size:22px;font-weight:800;color:var(--green)">
+                @(Model.TotalProductCount > 0 ? (Model.TotalStockValue / Model.TotalProductCount).ToString("N2") : "0,00") ₺
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kategori Özeti -->
+<div class="glass-card mb-4">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border-glass);font-size:15px;font-weight:600">
+        <i class="fa-solid fa-layer-group" style="color:var(--cyan);margin-right:8px"></i>Kategori Bazlı Özet
+    </div>
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead><tr><th>KATEGORİ</th><th>ÜRÜN SAYISI</th><th>TOPLAM STOK</th><th>TOPLAM DEĞER</th><th>ORAN</th></tr></thead>
+            <tbody>
+            @foreach (var c in Model.ByCategory)
+            {
+                var pct = Model.TotalStockValue > 0 ? (c.TotalValue / Model.TotalStockValue * 100) : 0;
+                <tr>
+                    <td style="font-weight:600">@c.Category</td>
+                    <td style="text-align:center">@c.ProductCount</td>
+                    <td style="text-align:center;font-weight:700">@c.TotalStock.ToString("N0")</td>
+                    <td style="font-weight:700;color:var(--accent)">@c.TotalValue.ToString("N2") ₺</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div style="flex:1;height:6px;background:var(--border-glass);border-radius:99px;overflow:hidden">
+                                <div style="height:100%;width:@pct.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%;background:var(--accent);border-radius:99px"></div>
+                            </div>
+                            <span style="font-size:12px;font-weight:600;color:var(--text-muted);min-width:36px">%@pct.ToString("F1")</span>
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Ürün Detay Tablosu -->
+<div class="glass-card">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border-glass);font-size:15px;font-weight:600">
+        <i class="fa-solid fa-box-open" style="color:var(--yellow);margin-right:8px"></i>Ürün Detay Listesi
+    </div>
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead>
+                <tr>
+                    <th>ÜRÜN</th>
+                    <th>SKU</th>
+                    <th>KATEGORİ</th>
+                    <th style="text-align:right">STOK</th>
+                    <th style="text-align:right">BİRİM FİYAT</th>
+                    <th style="text-align:right">TOPLAM DEĞER</th>
+                    <th>DURUM</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var p in Model.Products)
+            {
+                <tr class="@(p.IsCritical ? "critical-row" : "")">
+                    <td style="font-weight:600;font-size:13px">@p.Name</td>
+                    <td style="font-family:monospace;font-size:11px;color:var(--text-muted)">@p.SKU</td>
+                    <td><span class="badge-nova badge-cyan" style="font-size:10px">@p.Category</span></td>
+                    <td style="text-align:right;font-weight:700;color:@(p.IsCritical ? "var(--red)" : p.Stock == 0 ? "var(--yellow)" : "var(--text-primary)")">
+                        @p.Stock.ToString("N0")
+                    </td>
+                    <td style="text-align:right;color:var(--text-secondary)">@p.BasePrice.ToString("N2") ₺</td>
+                    <td style="text-align:right;font-weight:700;color:var(--accent)">@p.TotalValue.ToString("N2") ₺</td>
+                    <td>
+                        @if (p.Stock == 0) { <span class="badge-nova badge-red">Tükendi</span> }
+                        else if (p.IsCritical) { <span class="badge-nova badge-red critical-badge"><i class="fa-solid fa-circle-exclamation"></i> Kritik</span> }
+                        else { <span class="badge-nova badge-green">Normal</span> }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
