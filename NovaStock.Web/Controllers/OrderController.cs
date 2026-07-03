@@ -42,7 +42,7 @@ public class OrderController : Controller
     }
 
     // ─── INDEX ──────────────────────────────────────────────────────────────────
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index([FromQuery] string? status = null)
     {
         var user    = await _userManager.GetUserAsync(User);
         var isAdmin = User.IsInRole("Admin");
@@ -55,9 +55,14 @@ public class OrderController : Controller
         if (!isAdmin)
             query = query.Where(o => o.DealerId == user!.Id);
 
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<OrderStatus>(status, true, out var orderStatus))
+            query = query.Where(o => o.Status == orderStatus);
+
         var orders = await query
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
+        
+        ViewBag.CurrentStatus = status;
 
         return View(orders);
     }
