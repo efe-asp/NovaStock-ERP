@@ -1,0 +1,116 @@
+@model IEnumerable<NovaStock.Web.Models.Promotion>
+@{
+    ViewData["Title"] = "Kampanyalar";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-tag" style="color:var(--accent-light);margin-right:10px"></i>Kampanyalar & Fiyat Politikası</h1>
+        <div class="breadcrumb-nova">Aktif: @Model.Count(p => p.IsActive) · Toplam: @Model.Count()</div>
+    </div>
+    <a href="/Promotion/Create" class="btn-nova">
+        <i class="fa-solid fa-plus"></i> Yeni Kampanya
+    </a>
+</div>
+
+<div class="glass-card">
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead>
+                <tr>
+                    <th>KAMPANYA ADI</th>
+                    <th>TİP</th>
+                    <th>İNDİRİM</th>
+                    <th>KOŞ. (MİN)</th>
+                    <th>KATEGORİ</th>
+                    <th>BİTİŞ</th>
+                    <th>DURUM</th>
+                    <th>İŞLEM</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var p in Model)
+            {
+                var typeTr = p.Type switch {
+                    NovaStock.Web.Models.PromotionType.PercentageDiscount => "Yüzde İndirim",
+                    NovaStock.Web.Models.PromotionType.FixedDiscount      => "Sabit İndirim",
+                    NovaStock.Web.Models.PromotionType.FreeShipping       => "Ücretsiz Kargo",
+                    NovaStock.Web.Models.PromotionType.BuyXGetY           => "3 Al 2 Öde",
+                    _                                                      => p.Type.ToString()
+                };
+                var discVal = p.Type == NovaStock.Web.Models.PromotionType.PercentageDiscount
+                    ? $"%{p.DiscountValue:N0}"
+                    : $"{p.DiscountValue:N2} ₺";
+                var expired = p.ValidUntil.HasValue && p.ValidUntil.Value < DateTime.UtcNow;
+
+                <tr class="@(expired ? "critical-row" : "")">
+                    <td>
+                        <div style="font-weight:600;font-size:13px">@p.Name</div>
+                        @if (p.MinimumQuantity.HasValue)
+                        {
+                            <div style="font-size:11px;color:var(--text-muted)">Min @p.MinimumQuantity adet</div>
+                        }
+                    </td>
+                    <td><span class="badge-nova badge-purple" style="font-size:10px">@typeTr</span></td>
+                    <td style="font-weight:700;color:var(--green)">@discVal</td>
+                    <td style="font-size:12px;color:var(--text-muted)">
+                        @(p.MinimumCartTotal.HasValue ? $"{p.MinimumCartTotal:N2} ₺" : "—")
+                    </td>
+                    <td>
+                        @if (p.Category != null)
+                        {
+                            <span class="badge-nova badge-cyan" style="font-size:10px">@p.Category.Name</span>
+                        }
+                        else
+                        {
+                            <span style="font-size:12px;color:var(--text-muted)">Tümü</span>
+                        }
+                    </td>
+                    <td style="font-size:12px;color:@(expired ? "var(--red)" : "var(--text-muted)")">
+                        @(p.ValidUntil.HasValue ? p.ValidUntil.Value.ToLocalTime().ToString("dd.MM.yyyy") : "—")
+                        @if (expired) { <span style="font-size:10px"> (Süresi doldu)</span> }
+                    </td>
+                    <td>
+                        @if (p.IsActive && !expired)
+                        {
+                            <span class="badge-nova badge-green">Aktif</span>
+                        }
+                        else
+                        {
+                            <span class="badge-nova badge-gray">Pasif</span>
+                        }
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px">
+                            <a href="/Promotion/Edit/@p.Id" class="btn-nova" style="padding:5px 10px;font-size:11px">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="post" action="/Promotion/Toggle/@p.Id">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-nova-outline" style="padding:5px 10px;font-size:11px" title="@(p.IsActive ? "Pasif Et" : "Aktif Et")">
+                                    <i class="fa-solid @(p.IsActive ? "fa-pause" : "fa-play")"></i>
+                                </button>
+                            </form>
+                            <form method="post" action="/Promotion/Delete/@p.Id"
+                                  onsubmit="return confirm('@p.Name silinecek?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-danger-nova">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" style="text-align:center;padding:50px;color:var(--text-muted)">
+                    <i class="fa-solid fa-tag" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>
+                    Kampanya tanımlanmamış.
+                    <br><a href="/Promotion/Create" class="btn-nova" style="margin-top:12px;display:inline-flex">Kampanya Ekle</a>
+                </td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

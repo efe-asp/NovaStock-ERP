@@ -1,0 +1,98 @@
+@model NovaStock.Web.ViewModels.PromotionFormViewModel
+@{
+    ViewData["Title"] = "Kampanya Düzenle";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-tag" style="color:var(--accent-light);margin-right:10px"></i>Kampanya Düzenle</h1>
+        <div class="breadcrumb-nova">@Model.Name</div>
+    </div>
+    <a href="/Promotion" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Geri</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-xl-6 col-lg-8">
+        <div class="glass-card p-4">
+            <form method="post" action="/Promotion/Edit/@Model.Id">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id" />
+                @Html.ValidationSummary(true, "", new { @class = "alert-nova alert-danger-nova mb-3" })
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label-nova">Kampanya Adı <span style="color:var(--red)">*</span></label>
+                        <input name="Name" value="@Model.Name" class="form-nova" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Kampanya Tipi</label>
+                        <select name="Type" class="form-nova">
+                            @foreach (var t in Enum.GetValues<NovaStock.Web.Models.PromotionType>())
+                            {
+                                var label = t switch {
+                                    NovaStock.Web.Models.PromotionType.PercentageDiscount => "Yüzde İndirim (%)",
+                                    NovaStock.Web.Models.PromotionType.FixedDiscount      => "Sabit Tutar (₺)",
+                                    NovaStock.Web.Models.PromotionType.FreeShipping       => "Ücretsiz Kargo",
+                                    NovaStock.Web.Models.PromotionType.BuyXGetY           => "3 Al 2 Öde",
+                                    _                                                      => t.ToString()
+                                };
+                                if (Model.Type == t)
+                                {
+                                    <option value="@t" selected>@label</option>
+                                }
+                                else
+                                {
+                                    <option value="@t">@label</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">İndirim Değeri</label>
+                        <input name="DiscountValue" type="number" step="0.01" min="0.01" value="@Model.DiscountValue" class="form-nova" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Min. Sepet Tutarı (₺)</label>
+                        <input name="MinimumCartTotal" type="number" step="0.01" min="0" value="@Model.MinimumCartTotal" class="form-nova" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Min. Ürün Adedi</label>
+                        <input name="MinimumQuantity" type="number" min="1" value="@Model.MinimumQuantity" class="form-nova" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Kategori (opsiyonel)</label>
+                        <select name="CategoryId" class="form-nova">
+                            <option value="">Tümü</option>
+                            @foreach (var c in Model.Categories)
+                            {
+                                if (Model.CategoryId?.ToString() == c.Value)
+                                {
+                                    <option value="@c.Value" selected>@c.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@c.Value">@c.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Bitiş Tarihi</label>
+                        <input name="ValidUntil" type="date" value="@Model.ValidUntil?.ToString("yyyy-MM-dd")" class="form-nova" />
+                    </div>
+                    <div class="col-12">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+                            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") style="accent-color:var(--accent);width:16px;height:16px">
+                            Kampanya Aktif
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;margin-top:20px">
+                    <button type="submit" class="btn-nova"><i class="fa-solid fa-floppy-disk"></i> Güncelle</button>
+                    <a href="/Promotion" class="btn-nova-outline">İptal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
