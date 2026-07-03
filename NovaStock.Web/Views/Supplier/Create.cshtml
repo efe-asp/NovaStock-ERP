@@ -1,0 +1,68 @@
+@model NovaStock.Web.ViewModels.SupplierFormViewModel
+@{
+    ViewData["Title"] = "Yeni Tedarikçi";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-truck-ramp-box" style="color:var(--accent-light);margin-right:10px"></i>Yeni Tedarikçi</h1>
+        <div class="breadcrumb-nova">Tedarikçi kaydı oluştur</div>
+    </div>
+    <a href="/Supplier" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Geri</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-xl-7 col-lg-9">
+        <div class="glass-card p-4">
+            <form method="post" action="/Supplier/Create">
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "alert-nova alert-danger-nova mb-3" })
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label-nova">Tedarikçi Adı <span style="color:var(--red)">*</span></label>
+                        <input name="Name" value="@Model.Name" class="form-nova" placeholder="Firma / marka adı" required />
+                        @Html.ValidationMessage("Name", new { @class = "text-danger", style = "font-size:12px" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">İlgili Kişi</label>
+                        <input name="ContactPerson" value="@Model.ContactPerson" class="form-nova" placeholder="Ad Soyad" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Telefon</label>
+                        <input name="Phone" value="@Model.Phone" class="form-nova" placeholder="+90 5xx xxx xx xx" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">E-posta</label>
+                        <input name="Email" type="email" value="@Model.Email" class="form-nova" placeholder="tedarikci@firma.com" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">Vergi No</label>
+                        <input name="TaxNumber" value="@Model.TaxNumber" class="form-nova" placeholder="1234567890" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-nova">Adres</label>
+                        <textarea name="Address" class="form-nova" rows="2" placeholder="Açık adres...">@Model.Address</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-nova">Notlar</label>
+                        <textarea name="Notes" class="form-nova" rows="2" placeholder="İç notlar...">@Model.Notes</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary)">
+                            <input type="checkbox" name="IsActive" value="true" checked style="accent-color:var(--accent);width:16px;height:16px">
+                            Aktif Tedarikçi
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;margin-top:20px">
+                    <button type="submit" class="btn-nova">
+                        <i class="fa-solid fa-floppy-disk"></i> Kaydet
+                    </button>
+                    <a href="/Supplier" class="btn-nova-outline">İptal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

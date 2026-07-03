@@ -1,0 +1,110 @@
+@model IEnumerable<NovaStock.Web.ViewModels.SupplierListItem>
+@{
+    ViewData["Title"] = "Tedarikçiler";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-truck-ramp-box" style="color:var(--accent-light);margin-right:10px"></i>Tedarikçiler</h1>
+        <div class="breadcrumb-nova">Toplam @Model.Count() tedarikçi</div>
+    </div>
+    <div style="display:flex;gap:10px">
+        <a href="/Supplier/Purchase" class="btn-nova-outline">
+            <i class="fa-solid fa-boxes-stacked"></i> Mal Kabul
+        </a>
+        <a href="/Supplier/Create" class="btn-nova">
+            <i class="fa-solid fa-plus"></i> Yeni Tedarikçi
+        </a>
+    </div>
+</div>
+
+<!-- Filtre -->
+<div class="glass-card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-lg-8">
+            <label class="form-label-nova">Arama</label>
+            <input name="search" value="@ViewBag.Search" class="form-nova" placeholder="Tedarikçi adı, e-posta veya ilgili kişi..." />
+        </div>
+        <div class="col-lg-2">
+            <button type="submit" class="btn-nova w-100"><i class="fa-solid fa-magnifying-glass"></i> Ara</button>
+        </div>
+        <div class="col-lg-2">
+            <a href="/Supplier" class="btn-nova-outline w-100" style="justify-content:center"><i class="fa-solid fa-rotate-right"></i> Temizle</a>
+        </div>
+    </form>
+</div>
+
+<!-- Tablo -->
+<div class="glass-card">
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead>
+                <tr>
+                    <th>TEDARİKÇİ</th>
+                    <th>İLGİLİ KİŞİ</th>
+                    <th>İLETİŞİM</th>
+                    <th>TOPLAM ALIŞ</th>
+                    <th>CARİ BAKİYE</th>
+                    <th>DURUM</th>
+                    <th>İŞLEM</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var s in Model)
+            {
+                <tr>
+                    <td>
+                        <div style="font-weight:600;font-size:13px">@s.Name</div>
+                        <div style="font-size:11px;color:var(--text-muted)">@s.OrderCount sipariş</div>
+                    </td>
+                    <td style="font-size:13px">@(s.ContactPerson ?? "—")</td>
+                    <td>
+                        <div style="font-size:12px">@(s.Phone ?? "—")</div>
+                        <div style="font-size:11px;color:var(--text-muted)">@(s.Email ?? "")</div>
+                    </td>
+                    <td style="font-weight:700;color:var(--accent)">@s.TotalPurchased.ToString("N2") ₺</td>
+                    <td style="font-weight:700;color:@(s.Balance < 0 ? "var(--red)" : "var(--green)")">
+                        @s.Balance.ToString("N2") ₺
+                        @if (s.Balance < 0)
+                        {
+                            <span style="font-size:10px;color:var(--red)"> (Borç)</span>
+                        }
+                    </td>
+                    <td>
+                        @if (s.IsActive)
+                        {
+                            <span class="badge-nova badge-green">Aktif</span>
+                        }
+                        else
+                        {
+                            <span class="badge-nova badge-gray">Pasif</span>
+                        }
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px">
+                            <a href="/Supplier/Edit/@s.Id" class="btn-nova" style="padding:5px 10px;font-size:11px">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <form method="post" action="/Supplier/Delete/@s.Id"
+                                  onsubmit="return confirm('@s.Name silinecek. Devam edilsin mi?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-danger-nova">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" style="text-align:center;padding:50px;color:var(--text-muted)">
+                    <i class="fa-solid fa-truck" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.3"></i>
+                    Kayıtlı tedarikçi bulunamadı.
+                    <br><a href="/Supplier/Create" class="btn-nova" style="margin-top:12px;display:inline-flex">Tedarikçi Ekle</a>
+                </td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

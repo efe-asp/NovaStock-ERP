@@ -1,0 +1,186 @@
+@model NovaStock.Web.ViewModels.PurchaseViewModel
+@{
+    ViewData["Title"] = "Mal Kabul";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-boxes-stacked" style="color:var(--accent-light);margin-right:10px"></i>Mal Kabul</h1>
+        <div class="breadcrumb-nova">Tedarikçiden ürün al, stok güncelle</div>
+    </div>
+    <a href="/Supplier" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Tedarikçiler</a>
+</div>
+
+<form method="post" action="/Supplier/Purchase" id="purchaseForm">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-3">
+        <!-- Sol: Tedarikçi & Depo -->
+        <div class="col-xl-4">
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:16px">
+                    <i class="fa-solid fa-info-circle" style="color:var(--accent);margin-right:8px"></i>Genel Bilgiler
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-nova">Tedarikçi <span style="color:var(--red)">*</span></label>
+                    <select name="SupplierId" class="form-nova" required>
+                        <option value="">Tedarikçi seç...</option>
+                        @foreach (var s in Model.Suppliers)
+                        {
+                            <option value="@s.Value">@s.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-nova">Hedef Depo</label>
+                    <select name="WarehouseId" class="form-nova">
+                        <option value="">Depo seç (opsiyonel)...</option>
+                        @foreach (var w in Model.Warehouses)
+                        {
+                            <option value="@w.Value">@w.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-nova">Notlar</label>
+                    <textarea name="Notes" class="form-nova" rows="3" placeholder="Mal kabul notları..."></textarea>
+                </div>
+
+                <div style="background:rgba(99,102,241,0.07);border-radius:10px;padding:14px;border:1px solid rgba(99,102,241,0.2)">
+                    <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">
+                        <i class="fa-solid fa-lightbulb"></i> Nasıl çalışır?
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);line-height:1.6">
+                        Mal kabul onaylandığında seçilen ürünlerin stok adedi otomatik olarak artırılır.
+                        Tedarikçi cari hesabına borç olarak işlenir.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ: Ürün Satırları -->
+        <div class="col-xl-8">
+            <div class="glass-card p-4">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <div style="font-size:15px;font-weight:600">
+                        <i class="fa-solid fa-list" style="color:var(--accent);margin-right:8px"></i>Ürün Listesi
+                    </div>
+                    <button type="button" class="btn-nova-outline" onclick="addRow()" style="padding:6px 14px;font-size:12px">
+                        <i class="fa-solid fa-plus"></i> Satır Ekle
+                    </button>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table class="nova-table" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th style="min-width:200px">Ürün</th>
+                                <th style="width:100px">Miktar</th>
+                                <th style="width:130px">Birim Maliyet (₺)</th>
+                                <th style="width:120px">Satır Toplam</th>
+                                <th style="width:50px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            <tr id="row-0">
+                                <td>
+                                    <select name="Items[0].ProductId" class="form-nova" onchange="calcRow(0)" required>
+                                        <option value="">Ürün seç...</option>
+                                        @foreach (var p in Model.Products)
+                                        {
+                                            <option value="@p.Value">@p.Text</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input name="Items[0].Quantity" type="number" min="1" class="form-nova" value="1" onchange="calcRow(0)" style="text-align:center" required />
+                                </td>
+                                <td>
+                                    <input name="Items[0].UnitCost" type="number" step="0.01" min="0.01" class="form-nova" value="0" onchange="calcRow(0)" required />
+                                </td>
+                                <td id="total-0" style="font-weight:700;color:var(--green)">0,00 ₺</td>
+                                <td>
+                                    <button type="button" onclick="removeRow(0)" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);width:32px;height:32px;border-radius:8px;cursor:pointer">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--border-glass);margin-top:12px">
+                    <div style="font-size:14px;color:var(--text-muted)">
+                        Genel Toplam:
+                    </div>
+                    <div id="grandTotal" style="font-size:22px;font-weight:800;color:var(--green)">0,00 ₺</div>
+                </div>
+
+                <button type="submit" class="btn-nova" style="width:100%;justify-content:center;padding:12px">
+                    <i class="fa-solid fa-check-circle"></i> Mal Kabulü Onayla
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    // Ürün seçim listesi (tüm satırlar için kullanılır)
+    const productOptions = `@foreach (var p in Model.Products) { @($"<option value=\"{p.Value}\">{p.Text}</option>") }`;
+    let rowCount = 1;
+
+    function addRow() {
+        const idx  = rowCount++;
+        const body = document.getElementById('itemsBody');
+        const tr   = document.createElement('tr');
+        tr.id      = `row-${idx}`;
+        tr.innerHTML = `
+            <td>
+                <select name="Items[${idx}].ProductId" class="form-nova" onchange="calcRow(${idx})" required>
+                    <option value="">Ürün seç...</option>
+                    ${productOptions}
+                </select>
+            </td>
+            <td>
+                <input name="Items[${idx}].Quantity" type="number" min="1" class="form-nova" value="1" onchange="calcRow(${idx})" style="text-align:center" required />
+            </td>
+            <td>
+                <input name="Items[${idx}].UnitCost" type="number" step="0.01" min="0.01" class="form-nova" value="0" onchange="calcRow(${idx})" required />
+            </td>
+            <td id="total-${idx}" style="font-weight:700;color:var(--green)">0,00 ₺</td>
+            <td>
+                <button type="button" onclick="removeRow(${idx})" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);width:32px;height:32px;border-radius:8px;cursor:pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </td>`;
+        body.appendChild(tr);
+    }
+
+    function removeRow(idx) {
+        const row = document.getElementById(`row-${idx}`);
+        if (row) row.remove();
+        updateGrandTotal();
+    }
+
+    function calcRow(idx) {
+        const qty  = parseFloat(document.querySelector(`[name="Items[${idx}].Quantity"]`)?.value  || 0);
+        const cost = parseFloat(document.querySelector(`[name="Items[${idx}].UnitCost"]`)?.value || 0);
+        const cell = document.getElementById(`total-${idx}`);
+        if (cell) cell.textContent = (qty * cost).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        let grand = 0;
+        document.querySelectorAll('[id^="total-"]').forEach(cell => {
+            grand += parseFloat(cell.textContent.replace(/\./g, '').replace(',', '.').replace(' ₺', '')) || 0;
+        });
+        document.getElementById('grandTotal').textContent =
+            grand.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+    }
+</script>
+}
