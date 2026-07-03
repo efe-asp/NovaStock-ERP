@@ -211,6 +211,8 @@
 
         /* �� Stat Cards ���������������������������������������������������� */
         .stat-card {
+            display: block;
+            text-decoration: none;
             background: var(--bg-card);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius);
@@ -424,6 +426,15 @@
             @if (User.IsInRole("Admin"))
             {
                 <div class="nav-section-label" style="margin-top:10px;">Yönetim</div>
+                <a href="/Dealer" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dealer" ? "active" : "")">
+                    <i class="fa-solid fa-users"></i> Bayiler
+                </a>
+                <a href="/Supplier" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Supplier" ? "active" : "")">
+                    <i class="fa-solid fa-truck-ramp-box"></i> Tedarikçiler
+                </a>
+                <a href="/Promotion" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Promotion" ? "active" : "")">
+                    <i class="fa-solid fa-tag"></i> Kampanyalar
+                </a>
                 <a href="/Warehouse" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Warehouse" ? "active" : "")">
                     <i class="fa-solid fa-warehouse"></i> Depolar
                 </a>
@@ -436,11 +447,26 @@
             }
 
             <div class="nav-section-label" style="margin-top:10px;">Raporlar</div>
+            <a href="/Report/Sales" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "Sales" ? "active" : "")">
+                <i class="fa-solid fa-chart-line"></i> Satış Analitiği
+            </a>
+            <a href="/Report/StockValue" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "StockValue" ? "active" : "")">
+                <i class="fa-solid fa-coins"></i> Stok Değeri
+            </a>
             <a href="/Product/ExportExcel" class="nav-item-link">
                 <i class="fa-solid fa-file-excel"></i> Excel Raporu
             </a>
         </div>
 
+        <!-- Sistem Ayarları -->
+        @if (User.IsInRole("Admin"))
+        {
+            <div style="padding:8px 12px;border-top:1px solid var(--border-glass)">
+                <a href="/Settings" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" ? "active" : "")" style="padding:10px;border-radius:10px">
+                    <i class="fa-solid fa-gear"></i> Sistem Ayarları
+                </a>
+            </div>
+        }
         <div class="sidebar-footer">
             <div class="sidebar-user">
                 <div class="user-avatar">
@@ -512,6 +538,20 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+    <!-- ── Komut Paleti (Ctrl+K) ─────────────────────────────────────────────── -->
+    <div id="cmdPaletteOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:none;align-items:flex-start;justify-content:center;padding-top:80px" onclick="closePalette(event)">
+        <div id="cmdPalette" style="background:#fff;border-radius:16px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border-glass)">
+                <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted)"></i>
+                <input id="cmdInput" type="text" placeholder="Bir sayfa veya komut arayın..." autocomplete="off"
+                       style="flex:1;border:none;outline:none;font-size:15px;font-family:inherit;color:var(--text-primary);background:transparent"
+                       oninput="filterCommands(this.value)" onkeydown="handleKey(event)">
+                <kbd style="font-size:11px;background:var(--border-glass);padding:3px 7px;border-radius:6px;color:var(--text-muted)">ESC</kbd>
+            </div>
+            <ul id="cmdList" style="list-style:none;padding:8px 0;max-height:360px;overflow-y:auto;margin:0"></ul>
+        </div>
+    </div>
 
     <script>
         // ── Sidebar Toggle (Mobile) ─────────────────────────────────────────
@@ -587,6 +627,80 @@
             }
         }
         startSignalR();
+
+        // ── Komut Paleti (Ctrl+K) ──────────────────────────────────────────────
+        const COMMANDS = [
+            { icon: 'fa-gauge-high',       label: 'Dashboard',         sub: 'Ana sayfa',                 url: '/' },
+            { icon: 'fa-box-open',         label: 'Ürünler',           sub: 'Ürün yönetimi',             url: '/Product' },
+            { icon: 'fa-plus',             label: 'Yeni Ürün Ekle',    sub: 'Ürün oluştur',              url: '/Product/Create' },
+            { icon: 'fa-cart-shopping',    label: 'Siparişler',        sub: 'Sipariş yönetimi',          url: '/Order' },
+            { icon: 'fa-users',            label: 'Bayiler',           sub: 'Bayi listesi',              url: '/Dealer' },
+            { icon: 'fa-truck-ramp-box',   label: 'Tedarikçiler',      sub: 'Tedarikçi yönetimi',        url: '/Supplier' },
+            { icon: 'fa-boxes-stacked',    label: 'Mal Kabul',         sub: 'Stok artır',                url: '/Supplier/Purchase' },
+            { icon: 'fa-tag',              label: 'Kampanyalar',       sub: 'Fiyat politikası',          url: '/Promotion' },
+            { icon: 'fa-warehouse',        label: 'Depolar',           sub: 'Depo yönetimi',             url: '/Warehouse' },
+            { icon: 'fa-chart-line',       label: 'Satış Analitiği',   sub: 'Satış raporu',              url: '/Report/Sales' },
+            { icon: 'fa-coins',            label: 'Stok Değeri',       sub: 'Stok değer raporu',         url: '/Report/StockValue' },
+            { icon: 'fa-file-excel',       label: 'Excel İndir',       sub: 'Ürün Excel raporu',         url: '/Product/ExportExcel' },
+            { icon: 'fa-shield-halved',    label: 'Denetim Günlüğü',   sub: 'Audit log',                 url: '/Audit' },
+            { icon: 'fa-gear',             label: 'Sistem Ayarları',   sub: 'Ayarlar sayfası',           url: '/Settings' },
+        ];
+
+        let selectedIdx = 0;
+
+        function openPalette() {
+            const overlay = document.getElementById('cmdPaletteOverlay');
+            overlay.style.display = 'flex';
+            document.getElementById('cmdInput').value = '';
+            filterCommands('');
+            setTimeout(() => document.getElementById('cmdInput').focus(), 50);
+        }
+
+        function closePalette(e) {
+            if (!e || e.target === document.getElementById('cmdPaletteOverlay') || e.key === 'Escape') {
+                document.getElementById('cmdPaletteOverlay').style.display = 'none';
+            }
+        }
+
+        function filterCommands(q) {
+            const list = document.getElementById('cmdList');
+            const filtered = COMMANDS.filter(c =>
+                c.label.toLowerCase().includes(q.toLowerCase()) ||
+                c.sub.toLowerCase().includes(q.toLowerCase()));
+
+            list.innerHTML = filtered.map((c, i) => `
+                <li onclick="window.location='${c.url}'" onmouseover="setSelected(${i})"
+                    id="cmd-${i}"
+                    style="display:flex;align-items:center;gap:14px;padding:12px 20px;cursor:pointer;transition:background .15s;
+                           ${ i === 0 ? 'background:rgba(99,102,241,0.08);' : '' }">
+                    <div style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,0.1);
+                                display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:15px;flex-shrink:0">
+                        <i class="fa-solid ${c.icon}"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${c.label}</div>
+                        <div style="font-size:12px;color:var(--text-muted)">${c.sub}</div>
+                    </div>
+                    <div style="margin-left:auto;font-size:11px;color:var(--text-muted)"><i class="fa-solid fa-arrow-right"></i></div>
+                </li>`).join('');
+            selectedIdx = 0;
+        }
+
+        function setSelected(i) { selectedIdx = i; }
+
+        function handleKey(e) {
+            const items = document.querySelectorAll('#cmdList li');
+            if (e.key === 'ArrowDown') { selectedIdx = Math.min(selectedIdx + 1, items.length - 1); }
+            else if (e.key === 'ArrowUp') { selectedIdx = Math.max(selectedIdx - 1, 0); }
+            else if (e.key === 'Enter' && items[selectedIdx]) { items[selectedIdx].click(); return; }
+            else if (e.key === 'Escape') { closePalette(e); return; }
+            items.forEach((el, i) => el.style.background = i === selectedIdx ? 'rgba(99,102,241,0.08)' : '');
+        }
+
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openPalette(); }
+            if (e.key === 'Escape') closePalette(e);
+        });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

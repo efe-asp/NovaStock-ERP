@@ -17,54 +17,54 @@
 
 <div class="row g-3 mb-4">
     <div class="col-xl-2 col-md-4 col-6">
-        <div class="stat-card purple">
+        <a href="/Product" class="stat-card purple" style="display:block;text-decoration:none;cursor:pointer">
             <div class="stat-icon purple"><i class="fa-solid fa-box-open"></i></div>
             <div class="stat-value">@Model.TotalProducts</div>
             <div class="stat-label">Toplam Ürün</div>
-        </div>
+        </a>
     </div>
     <div class="col-xl-2 col-md-4 col-6">
-        <div class="stat-card red">
+        <a href="/Product?CriticalOnly=true" class="stat-card red" style="display:block;text-decoration:none;cursor:pointer">
             <div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
             <div class="stat-value">@Model.CriticalStockCount</div>
             <div class="stat-label">Kritik Stok</div>
-        </div>
+        </a>
     </div>
     <div class="col-xl-2 col-md-4 col-6">
-        <div class="stat-card cyan">
+        <a href="/Product" class="stat-card cyan" style="display:block;text-decoration:none;cursor:pointer">
             <div class="stat-icon cyan"><i class="fa-solid fa-layer-group"></i></div>
             <div class="stat-value">@Model.TotalCategories</div>
             <div class="stat-label">Kategori</div>
-        </div>
+        </a>
     </div>
     <div class="col-xl-2 col-md-4 col-6">
-        <div class="stat-card yellow">
+        <a href="/Order?Status=Pending" class="stat-card yellow" style="display:block;text-decoration:none;cursor:pointer">
             <div class="stat-icon yellow"><i class="fa-solid fa-cart-shopping"></i></div>
             <div class="stat-value">@Model.PendingOrders</div>
             <div class="stat-label">Bekleyen Sipariş</div>
-        </div>
+        </a>
     </div>
     <div class="col-xl-2 col-md-4 col-6">
-        <div class="stat-card green">
+        <a href="/Dealer" class="stat-card green" style="display:block;text-decoration:none;cursor:pointer">
             <div class="stat-icon green"><i class="fa-solid fa-users"></i></div>
             <div class="stat-value">@Model.TotalDealers</div>
             <div class="stat-label">Toplam Bayi</div>
-        </div>
+        </a>
     </div>
     <div class="col-xl-2 col-md-4 col-6">
-        <div class="stat-card purple">
+        <a href="/Report/Sales" class="stat-card purple" style="display:block;text-decoration:none;cursor:pointer">
             <div class="stat-icon purple"><i class="fa-solid fa-turkish-lira-sign"></i></div>
             <div class="stat-value" style="font-size:18px">@Model.MonthlyRevenue.ToString("N0") ₺</div>
             <div class="stat-label">Bu Ay Ciro</div>
-        </div>
+        </a>
     </div>
 </div>
 
 <!-- ── Grafikler ──────────────────────────────────────────────────────────── -->
-<div class="row g-3 mb-4">
+<div class="row g-3" style="margin-bottom: 3.5rem;">
     <!-- Aylık Satış Grafiği -->
     <div class="col-xl-8">
-        <div class="glass-card p-4" style="height:340px">
+        <div class="glass-card p-4">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
                 <div>
                     <div style="font-size:15px;font-weight:600">Aylık Satış Grafiği</div>
@@ -72,16 +72,18 @@
                 </div>
                 <span class="badge-nova badge-purple">Toplam: @Model.TotalRevenue.ToString("N0") ₺</span>
             </div>
-            <canvas id="salesChart" style="height:240px"></canvas>
+            <div style="position:relative;height:280px;width:100%;margin-bottom:10px;">
+                <canvas id="salesChart"></canvas>
+            </div>
         </div>
     </div>
 
     <!-- Kategori Pasta Grafiği -->
     <div class="col-xl-4">
-        <div class="glass-card p-4" style="height:340px">
+        <div class="glass-card p-4">
             <div style="font-size:15px;font-weight:600;margin-bottom:4px">Kategori Dağılımı</div>
             <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Sipariş Adedi</div>
-            <div style="position:relative;height:240px;display:flex;align-items:center;justify-content:center">
+            <div style="position:relative;height:280px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
                 <canvas id="categoryChart"></canvas>
             </div>
         </div>
