@@ -26,15 +26,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     }
 
     // ─── DbSet'ler ──────────────────────────────────────────────────────────────
-    public DbSet<Category>         Categories        { get; set; }
-    public DbSet<Product>          Products          { get; set; }
-    public DbSet<Order>            Orders            { get; set; }
-    public DbSet<OrderItem>        OrderItems        { get; set; }
-    public DbSet<Warehouse>        Warehouses        { get; set; }
-    public DbSet<ProductWarehouse> ProductWarehouses { get; set; }
-    public DbSet<AuditLog>         AuditLogs         { get; set; }
-    public DbSet<ExchangeRate>     ExchangeRates     { get; set; }
-    public DbSet<Promotion>        Promotions        { get; set; }
+    public DbSet<Category>          Categories        { get; set; }
+    public DbSet<Product>           Products          { get; set; }
+    public DbSet<Order>             Orders            { get; set; }
+    public DbSet<OrderItem>         OrderItems        { get; set; }
+    public DbSet<Warehouse>         Warehouses        { get; set; }
+    public DbSet<ProductWarehouse>  ProductWarehouses { get; set; }
+    public DbSet<AuditLog>          AuditLogs         { get; set; }
+    public DbSet<ExchangeRate>      ExchangeRates     { get; set; }
+    public DbSet<Promotion>         Promotions        { get; set; }
+    public DbSet<Supplier>          Suppliers         { get; set; }
+    public DbSet<PurchaseOrder>     PurchaseOrders    { get; set; }
+    public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
 
     // ─── Model Yapılandırması ───────────────────────────────────────────────────
     protected override void OnModelCreating(ModelBuilder builder)
@@ -48,8 +51,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<OrderItem>()       .HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<Warehouse>()       .HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<ProductWarehouse>().HasQueryFilter(e => !e.IsDeleted);
-        builder.Entity<ExchangeRate>()    .HasQueryFilter(e => !e.IsDeleted);
-        builder.Entity<Promotion>()       .HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<ExchangeRate>()     .HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<Promotion>()        .HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<Supplier>()         .HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<PurchaseOrder>()    .HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<PurchaseOrderItem>().HasQueryFilter(e => !e.IsDeleted);
 
         // ProductWarehouse composite index
         builder.Entity<ProductWarehouse>()
