@@ -91,6 +91,15 @@ public class OrderController : Controller
     {
         var products   = await _context.Products.Include(p => p.Category).ToListAsync();
         var warehouses = await _context.Warehouses.ToListAsync();
+        var suppliers  = await _context.Suppliers.ToListAsync();
+
+        if (User.IsInRole("Admin"))
+        {
+            var dealers = await _userManager.GetUsersInRoleAsync("Dealer");
+            ViewBag.Dealers = dealers.Where(d => d.IsActive).ToList();
+        }
+
+        ViewBag.Suppliers  = suppliers;
         ViewBag.Products   = products;
         ViewBag.Warehouses = warehouses;
         return View();
@@ -104,6 +113,7 @@ public class OrderController : Controller
         [FromForm] List<int>    productIds,
         [FromForm] List<int>    quantities,
         [FromForm] int?         warehouseId,
+        [FromForm] string?      dealerId,
         [FromForm] string?      notes)
     {
         if (productIds.Count == 0)
@@ -114,6 +124,19 @@ public class OrderController : Controller
 
         var user = await _userManager.GetUserAsync(User);
         if (user is null) return Forbid();
+
+        var orderDealer = user;
+        if (User.IsInRole("Admin"))
+        {
+            if (string.IsNullOrEmpty(dealerId))
+            {
+                TempData["Error"] = "Lütfen bir bayi seçiniz.";
+                return RedirectToAction(nameof(Create));
+            }
+            var selectedDealer = await _userManager.FindByIdAsync(dealerId);
+            if (selectedDealer is not null)
+                orderDealer = selectedDealer;
+        }
 
         // Sipariş kalemleri oluştur
         var items = new List<OrderItem>();
@@ -131,7 +154,7 @@ public class OrderController : Controller
             }
 
             // Bayi kademine göre fiyat
-            var unitPrice = product.GetPriceForTier(user.Tier);
+            var unitPrice = product.GetPriceForTier(orderDealer.Tier);
 
             items.Add(new OrderItem
             {
@@ -151,7 +174,7 @@ public class OrderController : Controller
             .Where(p => p.IsActive)
             .ToListAsync();
 
-        var result = _promotionEngine.Apply(items, activePromos, user);
+        var result = _promotionEngine.Apply(items, activePromos, orderDealer);
 
         // Sipariş numarası üret
         var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
@@ -159,7 +182,7 @@ public class OrderController : Controller
         var order = new Order
         {
             OrderNumber    = orderNumber,
-            DealerId       = user.Id,
+            DealerId       = orderDealer.Id,
             Status         = OrderStatus.Pending,
             SubTotal       = result.SubTotal,
             DiscountAmount = result.DiscountAmount,
@@ -175,7 +198,7 @@ public class OrderController : Controller
         var notif = new Notification
         {
             Title = "Yeni Sipariş!",
-            Message = $"{user.FullName} - {result.Total:N2} ₺",
+            Message = $"{orderDealer.FullName} - {result.Total:N2} ₺",
             Type = "order",
             IconClass = "fa-cart-check"
         };
@@ -186,14 +209,14 @@ public class OrderController : Controller
         // SignalR – Admin paneline anlık bildirim
         await _hub.Clients.Group("Admins").SendAsync("ReceiveOrderNotification", new
         {
-            DealerName = user.FullName,
+            DealerName = orderDealer.FullName,
             Total      = result.Total.ToString("N2"),
             OrderId    = order.Id,
             Timestamp  = DateTime.Now.ToString("HH:mm")
         });
 
         _logger.LogInformation("Yeni sipariş: {OrderNumber}, Bayi: {Dealer}, Toplam: {Total}",
-            orderNumber, user.FullName, result.Total);
+            orderNumber, orderDealer.FullName, result.Total);
 
         TempData["Success"] = $"Siparişiniz ({orderNumber}) başarıyla oluşturuldu.";
         return RedirectToAction(nameof(Detail), new { id = order.Id });
