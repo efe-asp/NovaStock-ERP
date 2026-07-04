@@ -61,6 +61,23 @@
                         <span asp-validation-for="CategoryId" style="color:var(--red);font-size:12px"></span>
                     </div>
                     <div class="col-md-6">
+                        <label class="form-label-nova" asp-for="SupplierId">Tedarikçi (Opsiyonel)</label>
+                        <select asp-for="SupplierId" class="form-nova">
+                            <option value="">-- Tedarikçi Seçin --</option>
+                            @foreach (var s in Model.Suppliers)
+                            {
+                                if (Model.SupplierId == s.Id)
+                                {
+                                    <option value="@s.Id" selected>@s.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@s.Id">@s.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
                         <label class="form-label-nova" asp-for="ImageUrl">Görsel URL (opsiyonel)</label>
                         <input asp-for="ImageUrl" class="form-nova" placeholder="https://..." />
                     </div>
