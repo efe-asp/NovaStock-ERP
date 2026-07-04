@@ -47,14 +47,23 @@ public class ProductFormViewModel
     [Required(ErrorMessage = "Kategori seçiniz.")]
     public int     CategoryId        { get; set; }
 
+    public int?    SupplierId        { get; set; }
+
     public bool    IsActive          { get; set; } = true;
     public string? ImageUrl          { get; set; }
 
-    // Dropdown için kategoriler
+    // Dropdown için kategoriler ve tedarikçiler
     public List<CategorySelectItem> Categories { get; set; } = [];
+    public List<SupplierSelectItem> Suppliers { get; set; } = [];
 }
 
 public class CategorySelectItem
+{
+    public int    Id   { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class SupplierSelectItem
 {
     public int    Id   { get; set; }
     public string Name { get; set; } = string.Empty;
