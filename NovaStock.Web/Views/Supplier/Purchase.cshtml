@@ -46,7 +46,19 @@
 
                 <div class="mb-3">
                     <label class="form-label-nova">Notlar</label>
-                    <textarea name="Notes" class="form-nova" rows="3" placeholder="Mal kabul notları..."></textarea>
+                    <textarea name="Notes" id="notesInput" class="form-nova" rows="3" placeholder="Mal kabul notları..."></textarea>
+                    <div style="margin-top: 8px;">
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">
+                            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--yellow)"></i> Hızlı Şablonlar (Tıklayın):
+                        </span>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            <button type="button" class="btn-nova-outline" style="padding: 4px 8px; font-size: 10px; border-radius: 6px; cursor: pointer;" onclick="fillNote('15 Gün Vadeli Alım (Cari Hesap)')">💸 Vadeli Alım</button>
+                            <button type="button" class="btn-nova-outline" style="padding: 4px 8px; font-size: 10px; border-radius: 6px; cursor: pointer;" onclick="fillNote('Gümrük işlemleri tamamlandı, KDV girişi yapıldı.')">🛃 Gümrüklü Alım</button>
+                            <button type="button" class="btn-nova-outline" style="padding: 4px 8px; font-size: 10px; border-radius: 6px; cursor: pointer;" onclick="fillNote('Kusurlu/hasarlı ürün değişimi kapsamında bedelsiz alım.')">📦 Hasar Değişimi</button>
+                            <button type="button" class="btn-nova-outline" style="padding: 4px 8px; font-size: 10px; border-radius: 6px; cursor: pointer;" onclick="fillNote('Sevkiyat kontrolü yapıldı, ürünler hasarsız teslim alındı.')">🚛 Sevkiyat Kontrol</button>
+                            <button type="button" class="btn-nova-outline" style="padding: 4px 8px; font-size: 10px; border-radius: 6px; cursor: pointer;" onclick="fillNote('Yıl sonu/Dönemlik kota doldurma kapsamında yapılan alım.')">🎯 Dönemlik Alım</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="background:rgba(99,102,241,0.07);border-radius:10px;padding:14px;border:1px solid rgba(99,102,241,0.2)">
@@ -129,20 +141,66 @@
 
 @section Scripts {
 <script>
-    // Ürün seçim listesi (tüm satırlar için kullanılır)
-    const productOptions = `@foreach (var p in Model.Products) { @($"<option value=\"{p.Value}\">{p.Text}</option>") }`;
+    const allProducts = [
+        @foreach (var p in Model.Products)
+        {
+            @: { value: "@p.Value", text: "@Html.Raw(p.Text)", supplierId: "@(p.Group?.Name ?? "")" },
+        }
+    ];
+
     let rowCount = 1;
+
+    function filterProductsBySupplier() {
+        const supplierSelect = document.querySelector('[name="SupplierId"]');
+        const supplierId = supplierSelect.value;
+
+        document.querySelectorAll('[name^="Items["][name$="].ProductId"]').forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Ürün seç...</option>';
+
+            allProducts.forEach(p => {
+                if (!supplierId || p.supplierId === supplierId || p.supplierId === "") {
+                    const opt = document.createElement('option');
+                    opt.value = p.value;
+                    opt.textContent = p.text;
+                    if (p.value === currentValue) {
+                        opt.selected = true;
+                    }
+                    select.appendChild(opt);
+                }
+            });
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        filterProductsBySupplier();
+    });
+
+    document.querySelector('[name="SupplierId"]').addEventListener('change', filterProductsBySupplier);
+
+    function getFilteredProductOptions() {
+        const supplierSelect = document.querySelector('[name="SupplierId"]');
+        const supplierId = supplierSelect.value;
+
+        let html = '<option value="">Ürün seç...</option>';
+        allProducts.forEach(p => {
+            if (!supplierId || p.supplierId === supplierId || p.supplierId === "") {
+                html += `<option value="${p.value}">${p.text}</option>`;
+            }
+        });
+        return html;
+    }
 
     function addRow() {
         const idx  = rowCount++;
         const body = document.getElementById('itemsBody');
         const tr   = document.createElement('tr');
         tr.id      = `row-${idx}`;
+        const filteredOptions = getFilteredProductOptions();
         tr.innerHTML = `
             <td>
                 <select name="Items[${idx}].ProductId" class="form-nova" onchange="calcRow(${idx})" required>
-                    <option value="">Ürün seç...</option>
-                    ${productOptions}
+                    ${filteredOptions}
                 </select>
             </td>
             <td>
@@ -181,6 +239,11 @@
         });
         document.getElementById('grandTotal').textContent =
             grand.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+    }
+
+    // Şablon notu inputa yerleştirme
+    function fillNote(text) {
+        document.getElementById('notesInput').value = text;
     }
 </script>
 }
