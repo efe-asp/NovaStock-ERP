@@ -225,6 +225,11 @@ static async Task SeedDatabaseAsync(WebApplication app)
     }
 
     // Demo Ürünleri (yoksa)
+    var apple = await context.Suppliers.FirstOrDefaultAsync(s => s.Name.Contains("Apple"));
+    var huawei = await context.Suppliers.FirstOrDefaultAsync(s => s.Name.Contains("Huawei"));
+    var realme = await context.Suppliers.FirstOrDefaultAsync(s => s.Name.Contains("Realme"));
+    var msi = await context.Suppliers.FirstOrDefaultAsync(s => s.Name.Contains("MSI"));
+
     var demoProducts = new List<Product>
     {
         new Product
@@ -237,6 +242,7 @@ static async Task SeedDatabaseAsync(WebApplication app)
             StockCount = 50,
             CriticalStockLevel = 5,
             CategoryId = 2, // Telefon
+            SupplierId = apple?.Id,
             ImageUrl = "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&q=80&w=300",
             IsActive = true
         },
@@ -250,6 +256,7 @@ static async Task SeedDatabaseAsync(WebApplication app)
             StockCount = 30,
             CriticalStockLevel = 3,
             CategoryId = 3, // Bilgisayar
+            SupplierId = apple?.Id,
             ImageUrl = "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=300",
             IsActive = true
         },
@@ -263,6 +270,7 @@ static async Task SeedDatabaseAsync(WebApplication app)
             StockCount = 40,
             CriticalStockLevel = 4,
             CategoryId = 3, // Bilgisayar
+            SupplierId = huawei?.Id,
             ImageUrl = "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&q=80&w=300",
             IsActive = true
         },
@@ -276,6 +284,7 @@ static async Task SeedDatabaseAsync(WebApplication app)
             StockCount = 100,
             CriticalStockLevel = 10,
             CategoryId = 5, // Aksesuar
+            SupplierId = huawei?.Id,
             ImageUrl = "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&q=80&w=300",
             IsActive = true
         },
@@ -289,6 +298,7 @@ static async Task SeedDatabaseAsync(WebApplication app)
             StockCount = 25,
             CriticalStockLevel = 2,
             CategoryId = 2, // Telefon
+            SupplierId = realme?.Id,
             ImageUrl = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=300",
             IsActive = true
         },
@@ -302,6 +312,7 @@ static async Task SeedDatabaseAsync(WebApplication app)
             StockCount = 20,
             CriticalStockLevel = 2,
             CategoryId = 3, // Bilgisayar
+            SupplierId = msi?.Id,
             ImageUrl = "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&q=80&w=300",
             IsActive = true
         },
@@ -315,6 +326,7 @@ static async Task SeedDatabaseAsync(WebApplication app)
             StockCount = 35,
             CriticalStockLevel = 5,
             CategoryId = 1, // Elektronik
+            SupplierId = msi?.Id,
             ImageUrl = "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=300",
             IsActive = true
         }
