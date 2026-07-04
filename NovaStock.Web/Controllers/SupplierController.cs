@@ -176,7 +176,12 @@ public class SupplierController : Controller
 
             Products   = await _context.Products
                 .OrderBy(p => p.Name)
-                .Select(p => new SelectListItem($"{p.Name} ({p.SKU})", p.Id.ToString()))
+                .Select(p => new SelectListItem
+                {
+                    Text = $"{p.Name} ({p.SKU})",
+                    Value = p.Id.ToString(),
+                    Group = p.SupplierId.HasValue ? new SelectListGroup { Name = p.SupplierId.ToString() } : null
+                })
                 .ToListAsync()
         };
 
