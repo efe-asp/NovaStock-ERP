@@ -139,7 +139,8 @@ public class ProductController : Controller
     {
         var vm = new ProductFormViewModel
         {
-            Categories = await GetCategoriesAsync()
+            Categories = await GetCategoriesAsync(),
+            Suppliers  = await GetSuppliersAsync()
         };
         return View(vm);
     }
@@ -153,6 +154,7 @@ public class ProductController : Controller
         if (!ModelState.IsValid)
         {
             vm.Categories = await GetCategoriesAsync();
+            vm.Suppliers  = await GetSuppliersAsync();
             return View(vm);
         }
 
@@ -166,6 +168,7 @@ public class ProductController : Controller
             StockCount         = vm.StockCount,
             CriticalStockLevel = vm.CriticalStockLevel,
             CategoryId         = vm.CategoryId,
+            SupplierId         = vm.SupplierId,
             IsActive           = vm.IsActive,
             ImageUrl           = vm.ImageUrl
         };
@@ -198,9 +201,11 @@ public class ProductController : Controller
             StockCount         = product.StockCount,
             CriticalStockLevel = product.CriticalStockLevel,
             CategoryId         = product.CategoryId,
+            SupplierId         = product.SupplierId,
             IsActive           = product.IsActive,
             ImageUrl           = product.ImageUrl,
-            Categories         = await GetCategoriesAsync()
+            Categories         = await GetCategoriesAsync(),
+            Suppliers          = await GetSuppliersAsync()
         };
 
         return View(vm);
@@ -217,6 +222,7 @@ public class ProductController : Controller
         if (!ModelState.IsValid)
         {
             vm.Categories = await GetCategoriesAsync();
+            vm.Suppliers  = await GetSuppliersAsync();
             return View(vm);
         }
 
@@ -231,6 +237,7 @@ public class ProductController : Controller
         product.StockCount         = vm.StockCount;
         product.CriticalStockLevel = vm.CriticalStockLevel;
         product.CategoryId         = vm.CategoryId;
+        product.SupplierId         = vm.SupplierId;
         product.IsActive           = vm.IsActive;
         product.ImageUrl           = vm.ImageUrl;
 
@@ -307,6 +314,13 @@ public class ProductController : Controller
     private async Task<List<CategorySelectItem>> GetCategoriesAsync()
         => await _context.Categories
             .Select(c => new CategorySelectItem { Id = c.Id, Name = c.Name })
+            .ToListAsync();
+
+    private async Task<List<SupplierSelectItem>> GetSuppliersAsync()
+        => await _context.Suppliers
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.Name)
+            .Select(s => new SupplierSelectItem { Id = s.Id, Name = s.Name })
             .ToListAsync();
 
     /// <summary>Kritik stok kontrolü – eşik altındaysa e-posta + SignalR bildirim.</summary>
