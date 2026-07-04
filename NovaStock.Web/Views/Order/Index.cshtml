@@ -63,10 +63,19 @@
                             </a>
                             @if (User.IsInRole("Admin") && o.Status == NovaStock.Web.Models.OrderStatus.Pending)
                             {
-                                <form method="post" action="/Order/Approve/@o.Id">
+                                <form method="post" action="/Order/Approve/@o.Id" onsubmit="return confirm('Bu siparişi onaylamak istediğinize emin misiniz?')">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn-nova" style="padding:5px 10px;font-size:11px;background:linear-gradient(135deg,var(--green),#059669)">
+                                    <button type="submit" class="btn-nova" style="padding:5px 10px;font-size:11px;background:linear-gradient(135deg,var(--green),#059669)" title="Onayla">
                                         <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </form>
+                            }
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <form method="post" action="/Order/Delete/@o.Id" onsubmit="return confirm('Bu siparişi tamamen silmek istediğinize emin misiniz? (Stoklar iade edilecektir)')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-nova" style="padding:5px 10px;font-size:11px;background:linear-gradient(135deg,var(--red),#b91c1c)" title="Sil">
+                                        <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </form>
                             }

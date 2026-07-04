@@ -247,6 +247,35 @@ public class OrderController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // ─── DELETE (Soft Delete) ────────────────────────────────────────────────────
+    [Authorize(Roles = "Admin")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var order = await _context.Orders
+            .Include(o => o.Items).ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (order is null) return NotFound();
+
+        // Eğer sipariş iptal edilmemişse, silinmeden önce stokları geri yükle
+        if (order.Status != OrderStatus.Cancelled)
+        {
+            foreach (var item in order.Items)
+            {
+                if (item.Product is not null)
+                    item.Product.StockCount += item.Quantity;
+            }
+        }
+
+        _context.Orders.Remove(order); // Soft delete tetiklenir
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = $"Sipariş #{order.OrderNumber} başarıyla silindi (Geri Dönüşüm Kutusuna taşındı).";
+        return RedirectToAction(nameof(Index));
+    }
+
     // ─── PDF FATURA İNDİR ────────────────────────────────────────────────────────
     public async Task<IActionResult> DownloadInvoice(int id)
     {

@@ -41,6 +41,16 @@
                 </button>
             </form>
         }
+        @if (User.IsInRole("Admin"))
+        {
+            <form method="post" action="/Order/Delete/@Model.Id"
+                  onsubmit="return confirm('Bu siparişi tamamen silmek istediğinize emin misiniz? (Stoklar iade edilecektir)')">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-danger-nova" style="padding:9px 16px;background:linear-gradient(135deg,var(--red),#b91c1c);color:#fff">
+                    <i class="fa-solid fa-trash"></i> Sil
+                </button>
+            </form>
+        }
     </div>
 </div>
 
