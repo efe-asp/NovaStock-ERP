@@ -34,6 +34,51 @@
     </div>
 </div>
 
+<style>
+    .product-name-hover {
+        position: relative;
+        display: inline-block;
+        cursor: help;
+        border-bottom: 1px dashed var(--border-glass);
+    }
+    .product-name-hover:hover .product-img-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(10px, -50%);
+    }
+    .product-img-tooltip {
+        position: absolute;
+        top: 50%;
+        left: 100%;
+        transform: translate(0, -50%);
+        width: 140px;
+        height: 140px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 9999;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .product-img-tooltip img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+    .product-img-tooltip span {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-align: center;
+    }
+</style>
+
 <!-- ── Smart Search / Filter ──────────────────────────────────────────────── -->
 <div class="glass-card p-3 mb-4">
     <form method="get" action="/Product" class="row g-2 align-items-end">
@@ -137,8 +182,20 @@
                 <tr class="@(isCritical ? "critical-row" : "")">
                     <td style="color:var(--text-muted);font-size:12px">@p.Id</td>
                     <td>
-                        <div style="font-weight:600;font-size:13px">@p.Name</div>
-                        <div style="font-size:11px;color:var(--text-muted);font-family:monospace">
+                        <div class="product-name-hover" style="font-weight:600;font-size:13px">
+                            @p.Name
+                            <div class="product-img-tooltip">
+                                @if (!string.IsNullOrEmpty(p.ImageUrl))
+                                {
+                                    <img src="@p.ImageUrl" alt="@p.Name" />
+                                }
+                                else
+                                {
+                                    <span><i class="fa-regular fa-image" style="font-size:24px;display:block;margin-bottom:6px;opacity:0.3"></i>Görsel Yok</span>
+                                }
+                            </div>
+                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);font-family:monospace;margin-top:2px">
                             @p.SKU
                             @if (!string.IsNullOrEmpty(p.Barcode))
                             {

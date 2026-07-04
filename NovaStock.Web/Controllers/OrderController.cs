@@ -170,6 +170,17 @@ public class OrderController : Controller
         };
 
         _context.Orders.Add(order);
+
+        // Bildirimi DB'ye kaydet
+        var notif = new Notification
+        {
+            Title = "Yeni Sipariş!",
+            Message = $"{user.FullName} - {result.Total:N2} ₺",
+            Type = "order",
+            IconClass = "fa-cart-check"
+        };
+        _context.Notifications.Add(notif);
+
         await _context.SaveChangesAsync();
 
         // SignalR – Admin paneline anlık bildirim

@@ -16,10 +16,20 @@
         <h1><i class="fa-solid fa-receipt" style="color:var(--yellow);margin-right:10px"></i>@Model.OrderNumber</h1>
         <div class="breadcrumb-nova"><a href="/Order" style="color:var(--accent-light);text-decoration:none">Siparişler</a> / @Model.OrderNumber</div>
     </div>
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:10px;align-items:center">
         <a href="/Order/DownloadInvoice/@Model.Id" class="btn-nova-outline">
             <i class="fa-solid fa-file-pdf"></i> Fatura İndir
         </a>
+        @if (User.IsInRole("Admin") && Model.Status == NovaStock.Web.Models.OrderStatus.Pending)
+        {
+            <form method="post" action="/Order/Approve/@Model.Id"
+                  onsubmit="return confirm('Bu siparişi onaylamak istediğinize emin misiniz?')">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-nova" style="padding:9px 16px;background:linear-gradient(135deg,var(--green),#059669)">
+                    <i class="fa-solid fa-check"></i> Onayla
+                </button>
+            </form>
+        }
         @if (Model.Status is not NovaStock.Web.Models.OrderStatus.Cancelled
               and not NovaStock.Web.Models.OrderStatus.Delivered)
         {

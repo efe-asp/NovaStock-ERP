@@ -7,7 +7,7 @@
 <div class="page-header">
     <div>
         <h1><i class="fa-solid fa-gear" style="color:var(--accent-light);margin-right:10px"></i>Sistem Ayarları</h1>
-        <div class="breadcrumb-nova">NovaStock Enterprise ERP v@Model.AppVersion</div>
+        <div class="breadcrumb-nova">NovaStock Enterprise ERP v1.0.0</div>
     </div>
 </div>
 
@@ -39,9 +39,16 @@
                         <label class="form-label-nova">Gönderen Adı</label>
                         <input name="SmtpFromName" value="@Model.SmtpFromName" class="form-nova" placeholder="NovaStock ERP" />
                     </div>
-                    <div class="col-12">
+                    <div class="col-md-6">
                         <label class="form-label-nova">Admin E-posta (bildirimler için)</label>
                         <input name="AdminEmail" value="@Model.AdminEmail" class="form-nova" placeholder="admin@firma.com" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova">E-posta Güvenliği (SSL/TLS)</label>
+                        <select class="form-nova">
+                            <option value="true">Aktif (Önerilen)</option>
+                            <option value="false">Pasif</option>
+                        </select>
                     </div>
                 </div>
 
@@ -65,25 +72,20 @@
                 <i class="fa-solid fa-circle-info" style="margin-right:8px"></i>Sistem Bilgileri
             </div>
             <div style="display:flex;flex-direction:column;gap:14px">
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
-                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-box-open" style="width:18px;color:var(--accent)"></i> Toplam Ürün</span>
-                    <strong style="color:var(--accent)">@Model.TotalProducts</strong>
+                <div style="padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
+                    <span style="font-size:13px;color:var(--text-primary)"><i class="fa-solid fa-box-open" style="width:18px;color:var(--accent)"></i> Toplam Ürün <strong style="color:var(--accent);margin-left:4px">(@Model.TotalProducts)</strong></span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
-                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-cart-shopping" style="width:18px;color:var(--cyan)"></i> Toplam Sipariş</span>
-                    <strong style="color:var(--cyan)">@Model.TotalOrders</strong>
+                <div style="padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
+                    <span style="font-size:13px;color:var(--text-primary)"><i class="fa-solid fa-cart-shopping" style="width:18px;color:var(--cyan)"></i> Toplam Sipariş <strong style="color:var(--cyan);margin-left:4px">(@Model.TotalOrders)</strong></span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
-                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-users" style="width:18px;color:var(--green)"></i> Toplam Kullanıcı</span>
-                    <strong style="color:var(--green)">@Model.TotalUsers</strong>
+                <div style="padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
+                    <span style="font-size:13px;color:var(--text-primary)"><i class="fa-solid fa-users" style="width:18px;color:var(--green)"></i> Toplam Kullanıcı <strong style="color:var(--green);margin-left:4px">(@Model.TotalUsers)</strong></span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
-                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-scroll" style="width:18px;color:var(--yellow)"></i> Audit Log Kaydı</span>
-                    <strong style="color:var(--yellow)">@Model.TotalAuditLogs.ToString("N0")</strong>
+                <div style="padding-bottom:10px;border-bottom:1px solid var(--border-glass)">
+                    <span style="font-size:13px;color:var(--text-primary)"><i class="fa-solid fa-scroll" style="width:18px;color:var(--yellow)"></i> Audit Log Kaydı <strong style="color:var(--yellow);margin-left:4px">(@Model.TotalAuditLogs.ToString("N0"))</strong></span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span style="font-size:13px;color:var(--text-muted)"><i class="fa-solid fa-database" style="width:18px;color:var(--text-muted)"></i> Veritabanı</span>
-                    <strong style="font-size:12px">@dbSizeMb MB</strong>
+                <div>
+                    <span style="font-size:13px;color:var(--text-primary)"><i class="fa-solid fa-database" style="width:18px;color:var(--text-muted)"></i> Veritabanı <strong style="color:var(--text-muted);font-size:12px;margin-left:4px">(@dbSizeMb MB)</strong></span>
                 </div>
             </div>
         </div>
@@ -104,8 +106,8 @@
                 </button>
             </form>
 
-            <div style="margin-top:14px;padding:12px;background:var(--bg-sidebar);border-radius:8px;font-size:11px;color:var(--text-muted);font-family:monospace">
-                DB: @Model.DatabasePath
+            <div style="margin-top:14px;padding:12px;background:var(--bg-sidebar);border-radius:8px;font-size:11px;color:var(--text-muted);font-family:monospace;border:1px solid var(--border-glass)">
+                <i class="fa-solid fa-database" style="margin-right:6px"></i> Veritabanı Türü: SQLite (novastock.db) &nbsp;|&nbsp; <i class="fa-solid fa-circle-check" style="color:var(--green)"></i> Durum: Bağlı
             </div>
         </div>
     </div>

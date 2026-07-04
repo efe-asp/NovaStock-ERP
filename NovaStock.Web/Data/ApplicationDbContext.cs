@@ -38,6 +38,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Supplier>          Suppliers         { get; set; }
     public DbSet<PurchaseOrder>     PurchaseOrders    { get; set; }
     public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+    public DbSet<Notification>      Notifications     { get; set; }
 
     // ─── Model Yapılandırması ───────────────────────────────────────────────────
     protected override void OnModelCreating(ModelBuilder builder)
@@ -56,6 +57,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<Supplier>()         .HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<PurchaseOrder>()    .HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<PurchaseOrderItem>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<Notification>()     .HasQueryFilter(e => !e.IsDeleted);
 
         // ProductWarehouse composite index
         builder.Entity<ProductWarehouse>()

@@ -316,6 +316,17 @@ public class ProductController : Controller
 
         var adminEmail = _config["Email:AdminEmail"] ?? "admin@novastock.com";
 
+        // Bildirimi DB'ye kaydet
+        var notif = new Notification
+        {
+            Title = "⚠️ Kritik Stok!",
+            Message = $"{product.Name}: {product.StockCount} adet kaldı",
+            Type = "stock",
+            IconClass = "fa-triangle-exclamation"
+        };
+        _context.Notifications.Add(notif);
+        await _context.SaveChangesAsync();
+
         // Asenkron e-posta gönder (fire-and-forget)
         _ = _email.SendCriticalStockAlertAsync(product.Name, product.StockCount, adminEmail);
 

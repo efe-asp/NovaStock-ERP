@@ -1,0 +1,133 @@
+@{
+    ViewData["Title"] = "Yeni Sipariş Oluştur";
+    var products = ViewBag.Products as List<NovaStock.Web.Models.Product> ?? new List<NovaStock.Web.Models.Product>();
+    var warehouses = ViewBag.Warehouses as List<NovaStock.Web.Models.Warehouse> ?? new List<NovaStock.Web.Models.Warehouse>();
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-cart-plus" style="color:var(--accent-light);margin-right:10px"></i>Yeni Sipariş Oluştur</h1>
+        <div class="breadcrumb-nova">Stoktan ürün seçerek siparişinizi oluşturun</div>
+    </div>
+</div>
+
+<div class="glass-card p-4">
+    <form method="post" action="/Order/Create" id="orderForm">
+        @Html.AntiForgeryToken()
+
+        <!-- Üst Ayarlar -->
+        <div class="row g-4 mb-4 pb-4" style="border-bottom:1px solid var(--border-glass)">
+            <div class="col-md-6">
+                <label class="form-label-nova"><i class="fa-solid fa-warehouse" style="color:var(--text-muted);margin-right:6px"></i>Sevk Deposu Seçimi</label>
+                <select name="warehouseId" class="form-nova" required>
+                    <option value="">-- Lütfen Depo Seçiniz --</option>
+                    @foreach(var w in warehouses)
+                    {
+                        <option value="@w.Id">@w.Name - @w.City</option>
+                    }
+                </select>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Siparişin çıkacağı ana depoyu belirleyin.</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label-nova"><i class="fa-solid fa-note-sticky" style="color:var(--text-muted);margin-right:6px"></i>Sipariş Notu (Opsiyonel)</label>
+                <input type="text" name="notes" class="form-nova" placeholder="Örn: Hafta içi teslim edilsin." />
+            </div>
+        </div>
+
+        <!-- Ürün Listesi -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="font-size:15px;font-weight:600;color:var(--accent)"><i class="fa-solid fa-box-open" style="margin-right:8px"></i>Sipariş Kalemleri</div>
+            <button type="button" class="btn-nova-outline" onclick="addRow()"><i class="fa-solid fa-plus"></i> Ürün Satırı Ekle</button>
+        </div>
+
+        <div style="overflow-x:auto">
+            <table class="nova-table" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th style="width:50%">Ürün Seçimi</th>
+                        <th style="width:20%">Adet</th>
+                        <th style="width:20%">Stok Durumu</th>
+                        <th style="width:10%;text-align:right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTbody">
+                    <!-- Dinamik satırlar buraya eklenecek -->
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:24px">
+            <button type="submit" class="btn-nova" style="padding:12px 24px;font-size:14px">
+                <i class="fa-solid fa-paper-plane"></i> Siparişi Tamamla
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Gizli Şablon (Satır Ekleme İçin) -->
+<template id="rowTemplate">
+    <tr class="item-row">
+        <td>
+            <select name="productIds" class="form-nova product-select" required onchange="updateStock(this)">
+                <option value="">-- Ürün Seçiniz --</option>
+                @foreach(var p in products)
+                {
+                    <option value="@p.Id" data-stock="@p.StockCount" data-critical="@p.CriticalStockLevel">@p.SKU - @p.Name (@p.BasePrice.ToString("N2") ₺)</option>
+                }
+            </select>
+        </td>
+        <td>
+            <input type="number" name="quantities" class="form-nova" min="1" value="1" required style="width:100px" />
+        </td>
+        <td>
+            <div class="stock-info badge-nova badge-gray">Seçim Bekleniyor</div>
+        </td>
+        <td style="text-align:right">
+            <button type="button" class="btn-danger-nova" onclick="this.closest('tr').remove()" title="Satırı Sil">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script>
+        // Sayfa yüklendiğinde varsayılan 1 satır ekle
+        document.addEventListener('DOMContentLoaded', () => {
+            addRow();
+        });
+
+        function addRow() {
+            const template = document.getElementById('rowTemplate');
+            const tbody = document.getElementById('itemsTbody');
+            const clone = template.content.cloneNode(true);
+            tbody.appendChild(clone);
+        }
+
+        function updateStock(selectElem) {
+            const tr = selectElem.closest('tr');
+            const stockInfo = tr.querySelector('.stock-info');
+            const option = selectElem.options[selectElem.selectedIndex];
+
+            if(!option.value) {
+                stockInfo.className = 'stock-info badge-nova badge-gray';
+                stockInfo.innerHTML = 'Seçim Bekleniyor';
+                return;
+            }
+
+            const stock = parseInt(option.getAttribute('data-stock'));
+            const critical = parseInt(option.getAttribute('data-critical'));
+
+            stockInfo.innerHTML = `${stock} Adet`;
+
+            if(stock <= 0) {
+                stockInfo.className = 'stock-info badge-nova badge-red';
+                stockInfo.innerHTML = 'Stok Yok!';
+            } else if(stock <= critical) {
+                stockInfo.className = 'stock-info badge-nova badge-yellow';
+            } else {
+                stockInfo.className = 'stock-info badge-nova badge-green';
+            }
+        }
+    </script>
+}
