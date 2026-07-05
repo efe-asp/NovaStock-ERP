@@ -1,0 +1,193 @@
+@model NovaStock.Web.ViewModels.ProductDetailViewModel
+@using NovaStock.Web.Extensions
+@using NovaStock.Web.Models
+@{
+    ViewData["Title"] = Model.Product.Name + " – Ürün Detayı";
+    var p       = Model.Product;
+    var specs   = Model.Specs;
+    var isCrit  = p.StockCount <= p.CriticalStockLevel;
+    var vatRate = p.VatRate;
+    var costPrice  = p.CostPrice ?? 0;
+    var bronzePrice = p.BasePrice;
+    var silverPrice = Math.Round(p.BasePrice * 0.95m, 2);
+    var goldPrice   = Math.Round(p.BasePrice * 0.90m, 2);
+    var bronzeMargin = costPrice > 0 ? Math.Round((bronzePrice - costPrice) / costPrice * 100, 1) : 0;
+    var silverMargin = costPrice > 0 ? Math.Round((silverPrice - costPrice) / costPrice * 100, 1) : 0;
+    var goldMargin   = costPrice > 0 ? Math.Round((goldPrice   - costPrice) / costPrice * 100, 1) : 0;
+    var allImages = new List<string>();
+    if (!string.IsNullOrEmpty(p.ImageUrl)) allImages.Add(p.ImageUrl);
+    allImages.AddRange(specs.ImageUrls.Where(u => !string.IsNullOrEmpty(u) && u != p.ImageUrl));
+}
+
+<style>
+/* ─── Genel Sayfa ─────────────────────────────── */
+.detail-grid          { display:grid; grid-template-columns: 1fr 420px; gap:20px; }
+@@media(max-width:1100px){ .detail-grid { grid-template-columns:1fr; } }
+
+/* ─── Galeri Carousel ─────────────────────────── */
+.gallery-wrap         { position:relative; border-radius:18px; overflow:hidden;
+                        background:rgba(0,0,0,0.3); aspect-ratio:4/3;
+                        border:1px solid var(--border-glass); }
+.gallery-img          { position:absolute; inset:0; width:100%; height:100%;
+                        object-fit:contain; opacity:0;
+                        transition:opacity .5s ease; padding:16px; }
+.gallery-img.active   { opacity:1; }
+.gallery-placeholder  { display:flex; flex-direction:column; align-items:center;
+                        justify-content:center; height:100%;
+                        color:var(--text-muted); font-size:14px; gap:12px; }
+.gallery-dots         { display:flex; gap:6px; justify-content:center; margin-top:12px; }
+.gallery-dot          { width:8px; height:8px; border-radius:50%;
+                        background:rgba(255,255,255,.2); cursor:pointer;
+                        transition:background .3s; border:none; }
+.gallery-dot.active   { background:var(--accent); }
+.gallery-nav          { position:absolute; top:50%; transform:translateY(-50%);
+                        background:rgba(0,0,0,.5); border:none; color:#fff;
+                        width:32px; height:32px; border-radius:50%; cursor:pointer;
+                        display:flex; align-items:center; justify-content:center;
+                        font-size:13px; transition:background .2s; }
+.gallery-nav:hover    { background:rgba(0,0,0,.8); }
+.gallery-nav.prev     { left:10px; }
+.gallery-nav.next     { right:10px; }
+
+/* ─── Etiketler ───────────────────────────────── */
+.sku-badge            { font-family:monospace; font-size:13px; padding:4px 10px;
+                        background:rgba(var(--accent-rgb),.15); border:1px solid rgba(var(--accent-rgb),.3);
+                        border-radius:8px; color:var(--accent-light); display:inline-block; }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 style="font-size:22px">
+            <i class="fa-solid fa-box-open" style="color:var(--accent-light);margin-right:10px"></i>
+            @p.Name
+        </h1>
+        <div class="breadcrumb-nova">
+            <a href="/Product" style="color:var(--accent-light);text-decoration:none">Ürünler</a>
+            / @p.Name
+        </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+        @if (User.IsInRole("Admin"))
+        {
+            <a href="/Product/Edit/@p.Id" class="btn-nova">
+                <i class="fa-solid fa-pen"></i> Düzenle
+            </a>
+        }
+        <a href="/Product" class="btn-nova-outline">
+            <i class="fa-solid fa-arrow-left"></i> Geri
+        </a>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <!-- ══════════════════ SOL SÜTUN ══════════════════ -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- ① Kimlik & Galeri -->
+        <div class="glass-card p-4">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+                <!-- Galeri -->
+                <div>
+                    <div class="gallery-wrap" id="gallery">
+                        @if (allImages.Count > 0)
+                        {
+                            @for (int i = 0; i < allImages.Count; i++)
+                            {
+                                <img src="@allImages[i]"
+                                     alt="@p.Name @(i+1)"
+                                     class="gallery-img @(i == 0 ? "active" : "")"
+                                     id="img-@i"
+                                     onerror="this.style.display='none'" />
+                            }
+                            if (allImages.Count > 1)
+                            {
+                                <button class="gallery-nav prev" onclick="galleryNav(-1)">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button class="gallery-nav next" onclick="galleryNav(1)">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <div class="gallery-placeholder">
+                                <i class="fa-regular fa-image" style="font-size:48px;opacity:.2"></i>
+                                <span>Görsel Yok</span>
+                            </div>
+                        }
+                    </div>
+                    @if (allImages.Count > 1)
+                    {
+                        <div class="gallery-dots">
+                            @for (int i = 0; i < allImages.Count; i++)
+                            {
+                                <button class="gallery-dot @(i == 0 ? "active" : "")" id="dot-@i"
+                                        onclick="galleryGoTo(@i)"></button>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Kimlik Bilgileri -->
+                <div style="display:flex;flex-direction:column;gap:14px">
+                    <!-- Durum Rozetleri -->
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        @if (p.IsActive)
+                        {
+                            <span class="badge-nova badge-green"><i class="fa-solid fa-circle-check"></i> Aktif</span>
+                        }
+                        else
+                        {
+                            <span class="badge-nova badge-gray"><i class="fa-solid fa-circle-xmark"></i> Pasif</span>
+                        }
+                        <span class="badge-nova badge-cyan">@p.Category?.Name</span>
+                    </div>
+
+                    <!-- SKU -->
+                    <div>
+                        <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">SKU</div>
+                        <span class="sku-badge">@p.SKU</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════ SAĞ SÜTUN ══════════════════ -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+        <!-- Boş -->
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// ── Galeri Carousel ──────────────────────────────────────────────────────────
+const totalImages = @allImages.Count;
+let currentImg    = 0;
+let autoTimer     = null;
+
+function galleryGoTo(idx) {
+    if (totalImages === 0) return;
+    document.getElementById('img-' + currentImg)?.classList.remove('active');
+    document.getElementById('dot-' + currentImg)?.classList.remove('active');
+    currentImg = (idx + totalImages) % totalImages;
+    document.getElementById('img-' + currentImg)?.classList.add('active');
+    document.getElementById('dot-' + currentImg)?.classList.add('active');
+}
+
+function galleryNav(dir) {
+    clearInterval(autoTimer);
+    galleryGoTo(currentImg + dir);
+    startAutoplay();
+}
+
+function startAutoplay() {
+    if (totalImages <= 1) return;
+    autoTimer = setInterval(() => galleryGoTo(currentImg + 1), 1500);
+}
+
+startAutoplay();
+</script>
+}

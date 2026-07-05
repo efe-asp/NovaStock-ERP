@@ -101,6 +101,78 @@ public class ProductController : Controller
         return View(products);
     }
 
+    // ─── DETAIL ──────────────────────────────────────────────────────────────────
+    public async Task<IActionResult> Detail(int id)
+    {
+        var product = await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Supplier)
+            .Include(p => p.ProductWarehouses).ThenInclude(pw => pw.Warehouse)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (product is null) return NotFound();
+
+        // JSON özelliklerini parse et
+        var specs = new ProductSpecsData();
+        if (!string.IsNullOrEmpty(product.SpecsJson))
+        {
+            try { specs = JsonSerializer.Deserialize<ProductSpecsData>(product.SpecsJson) ?? new(); }
+            catch { specs = new(); }
+        }
+
+        // Son 6 aylık satış verisi
+        var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
+        var salesData = await _context.OrderItems
+            .Include(oi => oi.Order)
+            .Where(oi => oi.ProductId == id && oi.Order.CreatedAt >= sixMonthsAgo)
+            .GroupBy(oi => new { oi.Order.CreatedAt.Year, oi.Order.CreatedAt.Month })
+            .Select(g => new {
+                Year     = g.Key.Year,
+                Month    = g.Key.Month,
+                Quantity = g.Sum(oi => oi.Quantity),
+                Revenue  = g.Sum(oi => oi.Quantity * oi.UnitPrice)
+            })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        var monthlyNames = new[] { "Oca", "Şub", "Mar", "Nis", "May", "Haz",
+                                   "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" };
+        var monthlySales = salesData.Select(s => new MonthlySalesStat
+        {
+            Month    = monthlyNames[s.Month - 1],
+            Quantity = s.Quantity,
+            Revenue  = s.Revenue
+        }).ToList();
+
+        // Son 10 sipariş (bu ürün)
+        var recentOrders = await _context.OrderItems
+            .Include(oi => oi.Order).ThenInclude(o => o.Dealer)
+            .Where(oi => oi.ProductId == id)
+            .OrderByDescending(oi => oi.Order.CreatedAt)
+            .Take(10)
+            .Select(oi => new ProductRecentOrderItem
+            {
+                OrderId     = oi.OrderId,
+                OrderNumber = oi.Order.OrderNumber,
+                DealerName  = oi.Order.Dealer.FullName,
+                Quantity    = oi.Quantity,
+                UnitPrice   = oi.UnitPrice,
+                OrderDate   = oi.Order.CreatedAt,
+                Status      = oi.Order.Status.ToString()
+            })
+            .ToListAsync();
+
+        var vm = new ProductDetailViewModel
+        {
+            Product      = product,
+            Specs        = specs,
+            MonthlySales = monthlySales,
+            RecentOrders = recentOrders
+        };
+
+        return View(vm);
+    }
+
     // ─── RECYCLE BIN – Silinen ürünleri listele ──────────────────────────────────
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Recycle()
