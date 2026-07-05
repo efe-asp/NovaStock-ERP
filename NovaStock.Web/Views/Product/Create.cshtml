@@ -119,6 +119,21 @@
             </div>
         </div>
 
+        <!-- Teknik Özellikler -->
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-microchip" style="color:var(--accent-light);margin-right:8px"></i>
+                    Teknik Özellikler
+                    <span style="font-size:11px;color:var(--text-muted);font-weight:400;margin-left:8px">(Opsiyonel)</span>
+                </div>
+                <div id="techSpecsContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+                <button type="button" onclick="addTechSpec()" class="btn-nova-outline" style="margin-top:10px;font-size:12px">
+                    <i class="fa-solid fa-plus"></i> Satır Ekle
+                </button>
+            </div>
+        </div>
+
         <div class="col-lg-4">
             <div class="glass-card p-4 mb-3">
                 <div style="font-size:15px;font-weight:600;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
@@ -215,7 +230,23 @@
     basePriceInput.addEventListener('input', updatePrices);
     updatePrices();
 
-    // ── Mevcut SpecsJson'u forma yükle (Galeri) ──────────────────────────────
+    // ── Teknik Özellikler Editörü ─────────────────────────────────────────────
+    function addTechSpec(key = '', value = '') {
+        const container = document.getElementById('techSpecsContainer');
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px;align-items:center';
+        row.innerHTML = `
+            <input type="text" class="form-nova spec-key" placeholder="Özellik (Örn: RAM)" value="${key}" style="flex:1" />
+            <input type="text" class="form-nova spec-val" placeholder="Değer (Örn: 8 GB)" value="${value}" style="flex:2" />
+            <button type="button" onclick="this.parentElement.remove()"
+                    style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);
+                           width:34px;height:34px;border-radius:8px;cursor:pointer;flex-shrink:0">
+                <i class="fa-solid fa-xmark"></i>
+            </button>`;
+        container.appendChild(row);
+    }
+
+    // ── Mevcut SpecsJson'u forma yükle ───────────────────────────────────────
     (function loadExistingSpecs() {
         const raw = document.getElementById('specsJsonInput')?.value;
         if (!raw) return;
@@ -224,26 +255,32 @@
             if (data.ImageUrls?.length) {
                 document.getElementById('imageUrlsInput').value = data.ImageUrls.join('\n');
             }
+            if (data.Technical) {
+                Object.entries(data.Technical).forEach(([k, v]) => addTechSpec(k, v));
+            }
         } catch {}
     })();
 
-    // ── Form Submit'te SpecsJson oluştur (Sadece Görseller) ───────────────────
+    // ── Form Submit'te SpecsJson oluştur ─────────────────────────────────────
     document.querySelector('form').addEventListener('submit', function() {
         const imageLines = (document.getElementById('imageUrlsInput')?.value || '')
             .split('\n').map(l => l.trim()).filter(l => l);
 
+        const tech = {};
+        document.querySelectorAll('#techSpecsContainer > div').forEach(row => {
+            const k = row.querySelector('.spec-key')?.value.trim();
+            const v = row.querySelector('.spec-val')?.value.trim();
+            if (k && v) tech[k] = v;
+        });
+
         const specsData = {
             ImageUrls: imageLines,
-            Technical: {},
+            Technical: tech,
             Logistics: {},
             Compliance: {}
         };
 
-        // Eğer input zaten doluysa onu ezmeyelim (ilerideki commitler dolduracak)
-        const currentRaw = document.getElementById('specsJsonInput').value;
-        if (!currentRaw || currentRaw === "{}") {
-            document.getElementById('specsJsonInput').value = JSON.stringify(specsData);
-        }
+        document.getElementById('specsJsonInput').value = JSON.stringify(specsData);
     });
 
     // ── API'den Otomatik Doldur ───────────────────────────────────────────────
@@ -262,6 +299,11 @@
                 result.innerHTML = `<span style="color:var(--yellow)"><i class="fa-solid fa-triangle-exclamation"></i> ${data.message || 'Sonuç bulunamadı.'}</span>`;
                 return;
             }
+            // Teknik özellikleri doldur
+            document.getElementById('techSpecsContainer').innerHTML = '';
+            if (data.specs) {
+                Object.entries(data.specs).forEach(([k, v]) => addTechSpec(k, v));
+            }
             // Ana görseli doldur
             if (data.thumbnail) {
                 const imgInput = document.querySelector('[name="ImageUrl"]');
@@ -271,10 +313,8 @@
                     urlsArea.value = (urlsArea.value ? urlsArea.value + '\n' : '') + data.thumbnail;
                 }
             }
-            // Teknik özellikleri geçici sakla (bir sonraki adımda dolduracağız)
-            window.fetchedSpecs = data.specs;
 
-            result.innerHTML = `<span style="color:var(--green)"><i class="fa-solid fa-check"></i> "${data.phoneName}" için özellikler çekildi! (Teknik özellikler bir sonraki adımda yüklenecek)</span>`;
+            result.innerHTML = `<span style="color:var(--green)"><i class="fa-solid fa-check"></i> "${data.phoneName}" için ${Object.keys(data.specs||{}).length} özellik yüklendi!</span>`;
         } catch (err) {
             result.innerHTML = `<span style="color:var(--red)"><i class="fa-solid fa-xmark"></i> Bağlantı hatası.</span>`;
         } finally {
