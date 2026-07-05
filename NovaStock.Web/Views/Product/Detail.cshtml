@@ -57,10 +57,15 @@
 .stock-bar-wrap       { background:rgba(255,255,255,.06); border-radius:6px;
                         height:8px; overflow:hidden; margin-top:6px; }
 .stock-bar-fill       { height:100%; border-radius:6px; transition:width .8s ease; }
+/* ─── İç Kutu (Glassmorphism) ─────────────────── */
+.inner-glass-box      { background:rgba(255,255,255,.04); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+                        border:1px solid rgba(255,255,255,.08); border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,.05); }
+
 /* ─── Fiyat Matrisi ───────────────────────────── */
 .price-tier-card      { border-radius:12px; padding:14px 16px;
                         border:1px solid var(--border-glass);
-                        background:rgba(0,0,0,.2); }
+                        background:rgba(255,255,255,.04); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+                        box-shadow:0 8px 32px rgba(0,0,0,.05); }
 /* ─── Teknik Özellikler Grid ──────────────────── */
 .specs-kv-grid        { display:grid; grid-template-columns:auto 1fr; gap:0; }
 .specs-kv-row         { display:contents; }
@@ -211,7 +216,7 @@
                 </div>
 
                 <!-- Kritik Stok Eşiği -->
-                <div style="margin-top:18px;padding:12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border-glass)">
+                <div class="inner-glass-box" style="margin-top:18px;padding:12px">
                     <div style="display:flex;justify-content:space-between;font-size:13px">
                         <span style="color:var(--text-muted)"><i class="fa-solid fa-triangle-exclamation" style="color:var(--yellow)"></i> Kritik Eşik</span>
                         <span style="font-weight:700;color:var(--yellow)">@p.CriticalStockLevel Adet</span>
@@ -374,14 +379,14 @@
 
             @if (p.CostPrice.HasValue)
             {
-                <div style="margin-bottom:14px;padding:12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border-glass)">
+                <div class="inner-glass-box" style="margin-bottom:14px;padding:12px">
                     <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Maliyet Fiyatı</div>
                     <div style="font-size:22px;font-weight:800;margin-top:4px">@p.CostPrice.Value.ToString("N2") ₺</div>
                 </div>
             }
 
             <!-- Taban -->
-            <div style="margin-bottom:10px;padding:12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border-glass)">
+            <div class="inner-glass-box" style="margin-bottom:10px;padding:12px">
                 <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Taban Fiyat (Liste)</div>
                 <div style="font-size:22px;font-weight:800;margin-top:4px">@p.BasePrice.ToString("N2") ₺</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
@@ -391,7 +396,7 @@
 
             @if (p.PriceUSD.HasValue)
             {
-                <div style="margin-bottom:14px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border-glass)">
+                <div class="inner-glass-box" style="margin-bottom:14px;padding:10px 12px">
                     <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">USD Karşılığı</div>
                     <div style="font-size:16px;font-weight:700;color:var(--green);margin-top:2px">$ @p.PriceUSD.Value.ToString("N2")</div>
                 </div>
