@@ -61,6 +61,19 @@
 .price-tier-card      { border-radius:12px; padding:14px 16px;
                         border:1px solid var(--border-glass);
                         background:rgba(0,0,0,.2); }
+/* ─── Teknik Özellikler Grid ──────────────────── */
+.specs-kv-grid        { display:grid; grid-template-columns:auto 1fr; gap:0; }
+.specs-kv-row         { display:contents; }
+.specs-kv-row > *     { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.05);
+                        font-size:13px; }
+.specs-kv-row > *:first-child { color:var(--text-muted); font-weight:500; white-space:nowrap;
+                                 padding-right:20px; }
+.specs-kv-row > *:last-child  { color:var(--text-primary); }
+.specs-kv-row:last-child > *  { border-bottom:none; }
+
+/* ─── Sipariş tablosu ─────────────────────────── */
+.recent-status-badge  { font-size:10px; padding:2px 8px; border-radius:100px; font-weight:600;
+                        text-transform:uppercase; letter-spacing:.5px; }
 </style>
 
 <!-- Page Header -->
@@ -219,6 +232,136 @@
                 </div>
             }
         </div>
+        <!-- ③ Satış Grafiği -->
+        <div class="glass-card p-4">
+            <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                <i class="fa-solid fa-chart-line" style="color:var(--green);margin-right:8px"></i>
+                Son 6 Aylık Satış Trendi
+            </div>
+            @if (Model.MonthlySales.Count > 0)
+            {
+                <canvas id="salesChart" height="200"></canvas>
+            }
+            else
+            {
+                <div style="text-align:center;padding:32px;color:var(--text-muted)">
+                    <i class="fa-solid fa-chart-line" style="font-size:32px;opacity:.2;display:block;margin-bottom:10px"></i>
+                    Son 6 ayda bu ürüne ait satış verisi bulunmuyor.
+                </div>
+            }
+        </div>
+
+        <!-- ④ Teknik Özellikler -->
+        @if (specs.Technical.Count > 0)
+        {
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-microchip" style="color:var(--accent-light);margin-right:8px"></i>
+                    Teknik Özellikler
+                </div>
+                <div class="specs-kv-grid">
+                    @foreach (var kv in specs.Technical)
+                    {
+                        <div class="specs-kv-row">
+                            <div>@kv.Key</div>
+                            <div>@kv.Value</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- ⑤ Lojistik & Paketleme -->
+        @{
+            var log = specs.Logistics;
+            var hasLogistics = log.WeightGrams.HasValue || log.WidthCm.HasValue || log.HeightCm.HasValue || log.DepthCm.HasValue || log.Desi.HasValue;
+        }
+        @if (hasLogistics)
+        {
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-truck-ramp-box" style="color:var(--yellow);margin-right:8px"></i>
+                    Lojistik & Paketleme
+                </div>
+                <div class="specs-kv-grid">
+                    @if (log.WeightGrams.HasValue)
+                    {
+                        <div class="specs-kv-row">
+                            <div>Ağırlık (Net)</div>
+                            <div>@log.WeightGrams g</div>
+                        </div>
+                    }
+                    @if (log.WidthCm.HasValue && log.HeightCm.HasValue && log.DepthCm.HasValue)
+                    {
+                        <div class="specs-kv-row">
+                            <div>Kutu Boyutu</div>
+                            <div>@log.WidthCm cm × @log.HeightCm cm × @log.DepthCm cm</div>
+                        </div>
+                    }
+                    @if (log.Desi.HasValue)
+                    {
+                        <div class="specs-kv-row">
+                            <div>Desi (Hacim Ağırlığı)</div>
+                            <div>@log.Desi.Value.ToString("N2") desi</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- ⑥ Son Siparişler -->
+        @if (Model.RecentOrders.Count > 0)
+        {
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted);margin-right:8px"></i>
+                    Son Siparişler
+                </div>
+                <div style="overflow-x:auto">
+                    <table class="nova-table">
+                        <thead>
+                            <tr>
+                                <th>Sipariş No</th>
+                                <th>Bayi</th>
+                                <th>Adet</th>
+                                <th>Birim Fiyat</th>
+                                <th>Tarih</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Model.RecentOrders)
+                            {
+                                var statusClass = o.Status switch {
+                                    "Approved"   => "badge-green",
+                                    "Pending"    => "badge-yellow",
+                                    "Shipped"    => "badge-cyan",
+                                    "Delivered"  => "badge-green",
+                                    "Cancelled"  => "badge-red",
+                                    _            => "badge-gray"
+                                };
+                                var statusLabel = o.Status switch {
+                                    "Approved"   => "Onaylandı",
+                                    "Pending"    => "Beklemede",
+                                    "Shipped"    => "Kargoda",
+                                    "Delivered"  => "Teslim Edildi",
+                                    "Cancelled"  => "İptal",
+                                    _            => o.Status
+                                };
+                                <tr>
+                                    <td><a href="/Order/Detail/@o.OrderId" style="color:var(--accent-light)">@o.OrderNumber</a></td>
+                                    <td>@o.DealerName</td>
+                                    <td style="font-weight:700">@o.Quantity</td>
+                                    <td>@o.UnitPrice.ToString("N2") ₺</td>
+                                    <td style="font-size:12px;color:var(--text-muted)">@o.OrderDate.ToLocalTime().ToString("dd.MM.yyyy")</td>
+                                    <td><span class="badge-nova @statusClass recent-status-badge">@statusLabel</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
     </div>
 
     <!-- ══════════════════ SAĞ SÜTUN ══════════════════ -->
@@ -309,6 +452,7 @@
 </div>
 
 @section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // ── Galeri Carousel ──────────────────────────────────────────────────────────
 const totalImages = @allImages.Count;
@@ -336,5 +480,69 @@ function startAutoplay() {
 }
 
 startAutoplay();
+
+// ── Satış Grafiği ────────────────────────────────────────────────────────────
+@if (Model.MonthlySales.Count > 0)
+{
+    <text>
+    const salesLabels = [@Html.Raw(string.Join(",", Model.MonthlySales.Select(m => $"\"{m.Month}\"")))];
+    const salesQty    = [@Html.Raw(string.Join(",", Model.MonthlySales.Select(m => m.Quantity)))];
+    const salesRev    = [@Html.Raw(string.Join(",", Model.MonthlySales.Select(m => m.Revenue)))];
+
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: salesLabels,
+            datasets: [
+                {
+                    label: 'Satılan Adet',
+                    data: salesQty,
+                    borderColor: 'rgba(99,179,237,1)',
+                    backgroundColor: 'rgba(99,179,237,.1)',
+                    tension: .4, fill: true, pointRadius: 5,
+                    pointBackgroundColor: 'rgba(99,179,237,1)',
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Gelir (₺)',
+                    data: salesRev,
+                    borderColor: 'rgba(72,199,142,1)',
+                    backgroundColor: 'rgba(72,199,142,.05)',
+                    tension: .4, fill: false, pointRadius: 5,
+                    pointBackgroundColor: 'rgba(72,199,142,1)',
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: '#aaa', font: { size: 12 } } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.datasetIndex === 1
+                            ? ctx.dataset.label + ': ' + ctx.raw.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' ₺'
+                            : ctx.dataset.label + ': ' + ctx.raw + ' Adet'
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#777' }, grid: { color: 'rgba(255,255,255,.04)' } },
+                y: {
+                    type: 'linear', position: 'left',
+                    ticks: { color: '#777' }, grid: { color: 'rgba(255,255,255,.04)' }
+                },
+                y1: {
+                    type: 'linear', position: 'right',
+                    ticks: { color: '#777', callback: v => v.toLocaleString('tr-TR', {minimumFractionDigits:0}) + ' ₺' },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+    </text>
+}
 </script>
 }
