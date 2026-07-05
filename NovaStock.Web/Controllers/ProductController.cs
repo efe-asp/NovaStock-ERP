@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using NovaStock.Web.Data;
 using NovaStock.Web.Hubs;
 using NovaStock.Web.Models;
@@ -173,6 +174,86 @@ public class ProductController : Controller
         return View(vm);
     }
 
+    // ─── FETCH SPECS (Phone Specs API Proxy) ─────────────────────────────────────
+    [Authorize(Roles = "Admin")]
+    [HttpGet]
+    public async Task<IActionResult> FetchSpecs(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return BadRequest(new { error = "Model adı boş olamaz." });
+
+        try
+        {
+            using var http   = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            var encoded      = Uri.EscapeDataString(query);
+            var searchUrl    = $"https://phone-specs-api.vercel.app/search?query={encoded}";
+            var searchJson   = await http.GetStringAsync(searchUrl);
+            using var doc    = JsonDocument.Parse(searchJson);
+            var root         = doc.RootElement;
+
+            // API'den ilk sonucu al
+            if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+                return Ok(new { found = false, message = "Sonuç bulunamadı." });
+
+            var phones = data.EnumerateArray().ToList();
+            if (phones.Count == 0)
+                return Ok(new { found = false, message = "Sonuç bulunamadı." });
+
+            var firstPhone = phones[0];
+            if (!firstPhone.TryGetProperty("slug", out var slugEl))
+                return Ok(new { found = false });
+
+            var slug       = slugEl.GetString();
+            var detailUrl  = $"https://phone-specs-api.vercel.app/{slug}";
+            var detailJson = await http.GetStringAsync(detailUrl);
+            using var detailDoc = JsonDocument.Parse(detailJson);
+            var detail          = detailDoc.RootElement;
+
+            if (!detail.TryGetProperty("data", out var phoneData))
+                return Ok(new { found = false });
+
+            // Görseli al
+            phoneData.TryGetProperty("thumbnail", out var thumbEl);
+            var thumbnail = thumbEl.ValueKind == JsonValueKind.String ? thumbEl.GetString() : null;
+
+            // Teknik özellikleri düzleştir
+            var techSpecs = new Dictionary<string, string>();
+            if (phoneData.TryGetProperty("specifications", out var specsEl))
+            {
+                foreach (var spec in specsEl.EnumerateArray())
+                {
+                    if (!spec.TryGetProperty("specs", out var specItems)) continue;
+                    foreach (var item in specItems.EnumerateArray())
+                    {
+                        item.TryGetProperty("name", out var nameEl);
+                        item.TryGetProperty("value", out var valEl);
+                        var key = nameEl.ValueKind == JsonValueKind.String ? nameEl.GetString()! : "";
+                        var val = valEl.ValueKind == JsonValueKind.Array
+                            ? string.Join(", ", valEl.EnumerateArray().Select(v => v.GetString()))
+                            : (valEl.ValueKind == JsonValueKind.String ? valEl.GetString() ?? "" : "");
+                        if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(val))
+                            techSpecs[key] = val;
+                    }
+                }
+            }
+
+            phoneData.TryGetProperty("phone_name", out var phoneNameEl);
+
+            return Ok(new
+            {
+                found     = true,
+                phoneName = phoneNameEl.ValueKind == JsonValueKind.String ? phoneNameEl.GetString() : query,
+                thumbnail,
+                specs     = techSpecs
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("FetchSpecs API hatası: {Error}", ex.Message);
+            return Ok(new { found = false, message = "API bağlantı hatası: " + ex.Message });
+        }
+    }
+
     // ─── RECYCLE BIN – Silinen ürünleri listele ──────────────────────────────────
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Recycle()
@@ -240,12 +321,15 @@ public class ProductController : Controller
             Barcode            = vm.Barcode,
             Description        = vm.Description,
             BasePrice          = vm.BasePrice,
+            CostPrice          = vm.CostPrice,
+            VatRate            = vm.VatRate,
             StockCount         = vm.StockCount,
             CriticalStockLevel = vm.CriticalStockLevel,
             CategoryId         = vm.CategoryId,
             SupplierId         = vm.SupplierId,
             IsActive           = vm.IsActive,
-            ImageUrl           = vm.ImageUrl
+            ImageUrl           = vm.ImageUrl,
+            SpecsJson          = vm.SpecsJson
         };
 
         _context.Products.Add(product);
@@ -273,12 +357,15 @@ public class ProductController : Controller
             Barcode            = product.Barcode,
             Description        = product.Description,
             BasePrice          = product.BasePrice,
+            CostPrice          = product.CostPrice,
+            VatRate            = product.VatRate,
             StockCount         = product.StockCount,
             CriticalStockLevel = product.CriticalStockLevel,
             CategoryId         = product.CategoryId,
             SupplierId         = product.SupplierId,
             IsActive           = product.IsActive,
             ImageUrl           = product.ImageUrl,
+            SpecsJson          = product.SpecsJson,
             Categories         = await GetCategoriesAsync(),
             Suppliers          = await GetSuppliersAsync()
         };
@@ -309,12 +396,15 @@ public class ProductController : Controller
         product.Barcode            = vm.Barcode;
         product.Description        = vm.Description;
         product.BasePrice          = vm.BasePrice;
+        product.CostPrice          = vm.CostPrice;
+        product.VatRate            = vm.VatRate;
         product.StockCount         = vm.StockCount;
         product.CriticalStockLevel = vm.CriticalStockLevel;
         product.CategoryId         = vm.CategoryId;
         product.SupplierId         = vm.SupplierId;
         product.IsActive           = vm.IsActive;
         product.ImageUrl           = vm.ImageUrl;
+        product.SpecsJson          = vm.SpecsJson;
 
         await _context.SaveChangesAsync();
 
