@@ -57,6 +57,10 @@
 .stock-bar-wrap       { background:rgba(255,255,255,.06); border-radius:6px;
                         height:8px; overflow:hidden; margin-top:6px; }
 .stock-bar-fill       { height:100%; border-radius:6px; transition:width .8s ease; }
+/* ─── Fiyat Matrisi ───────────────────────────── */
+.price-tier-card      { border-radius:12px; padding:14px 16px;
+                        border:1px solid var(--border-glass);
+                        background:rgba(0,0,0,.2); }
 </style>
 
 <!-- Page Header -->
@@ -218,9 +222,90 @@
     </div>
 
     <!-- ══════════════════ SAĞ SÜTUN ══════════════════ -->
-    <div style="display:flex;flex-direction:column;gap:20px">
-        <!-- Boş -->
-    </div>
+        <!-- B2B Fiyat Matrisi -->
+        <div class="glass-card p-4">
+            <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                <i class="fa-solid fa-tags" style="color:var(--gold);margin-right:8px"></i>
+                B2B Fiyat Matrisi
+            </div>
+
+            @if (p.CostPrice.HasValue)
+            {
+                <div style="margin-bottom:14px;padding:12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border-glass)">
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Maliyet Fiyatı</div>
+                    <div style="font-size:22px;font-weight:800;margin-top:4px">@p.CostPrice.Value.ToString("N2") ₺</div>
+                </div>
+            }
+
+            <!-- Taban -->
+            <div style="margin-bottom:10px;padding:12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border-glass)">
+                <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">Taban Fiyat (Liste)</div>
+                <div style="font-size:22px;font-weight:800;margin-top:4px">@p.BasePrice.ToString("N2") ₺</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+                    KDV Dahil (%@vatRate): <strong>@((p.BasePrice * (1 + vatRate / 100m)).ToString("N2")) ₺</strong>
+                </div>
+            </div>
+
+            @if (p.PriceUSD.HasValue)
+            {
+                <div style="margin-bottom:14px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border-glass)">
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px">USD Karşılığı</div>
+                    <div style="font-size:16px;font-weight:700;color:var(--green);margin-top:2px">$ @p.PriceUSD.Value.ToString("N2")</div>
+                </div>
+            }
+
+            <!-- Kademeli Fiyatlar -->
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <!-- Bronze -->
+                <div class="price-tier-card" style="border-color:rgba(205,127,50,.3)">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <span class="badge-nova badge-bronze" style="font-size:11px">🥉 Bronze</span>
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">%0 indirim</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-size:18px;font-weight:800;color:var(--bronze)">@bronzePrice.ToString("N2") ₺</div>
+                            @if (p.CostPrice.HasValue)
+                            {
+                                <div style="font-size:11px;color:var(--text-muted)">Kâr Marjı: <strong style="color:var(--green)">%@bronzeMargin</strong></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <!-- Silver -->
+                <div class="price-tier-card" style="border-color:rgba(192,192,192,.3)">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <span class="badge-nova badge-silver" style="font-size:11px">🥈 Silver</span>
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">%5 indirim</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-size:18px;font-weight:800;color:var(--silver)">@silverPrice.ToString("N2") ₺</div>
+                            @if (p.CostPrice.HasValue)
+                            {
+                                <div style="font-size:11px;color:var(--text-muted)">Kâr Marjı: <strong style="color:var(--green)">%@silverMargin</strong></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <!-- Gold -->
+                <div class="price-tier-card" style="border-color:rgba(255,215,0,.3)">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <span class="badge-nova badge-gold" style="font-size:11px">🥇 Gold</span>
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">%10 indirim</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-size:18px;font-weight:800;color:var(--gold)">@goldPrice.ToString("N2") ₺</div>
+                            @if (p.CostPrice.HasValue)
+                            {
+                                <div style="font-size:11px;color:var(--text-muted)">Kâr Marjı: <strong style="color:var(--green)">%@goldMargin</strong></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 </div>
 
 @section Scripts {
