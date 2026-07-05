@@ -1,206 +1,422 @@
+@model NovaStock.Web.ViewModels.ProductFormViewModel
 @{
-    ViewData["Title"] = "Yeni Sipariş Oluştur";
-    var products = ViewBag.Products as List<NovaStock.Web.Models.Product> ?? new List<NovaStock.Web.Models.Product>();
-    var warehouses = ViewBag.Warehouses as List<NovaStock.Web.Models.Warehouse> ?? new List<NovaStock.Web.Models.Warehouse>();
-    var suppliers = ViewBag.Suppliers as List<NovaStock.Web.Models.Supplier> ?? new List<NovaStock.Web.Models.Supplier>();
-    var dealers = ViewBag.Dealers as List<NovaStock.Web.Models.ApplicationUser>;
+    ViewData["Title"] = "Yeni Ürün Ekle";
+    bool isEdit = Model.Id > 0;
 }
 
 <div class="page-header">
     <div>
-        <h1><i class="fa-solid fa-cart-plus" style="color:var(--accent-light);margin-right:10px"></i>Yeni Sipariş Oluştur</h1>
-        <div class="breadcrumb-nova">Stoktan ürün seçerek siparişinizi oluşturun</div>
+        <h1><i class="fa-solid fa-@(isEdit ? "pen" : "plus")" style="color:var(--accent-light);margin-right:10px"></i>
+            @(isEdit ? "Ürün Düzenle" : "Yeni Ürün Ekle")
+        </h1>
+        <div class="breadcrumb-nova"><a href="/Product" style="color:var(--accent-light);text-decoration:none">Ürünler</a> / @(isEdit ? Model.Name : "Yeni")</div>
     </div>
+    <a href="/Product" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Geri</a>
 </div>
 
-<div class="glass-card p-4">
-    <form method="post" action="/Order/Create" id="orderForm">
-        @Html.AntiForgeryToken()
-
-        <!-- Üst Ayarlar -->
-        <div class="row g-4 mb-4 pb-4" style="border-bottom:1px solid var(--border-glass)">
-            @if (dealers != null)
-            {
-                <div class="col-md-4">
-                    <label class="form-label-nova"><i class="fa-solid fa-users" style="color:var(--text-muted);margin-right:6px"></i>Bayi Seçimi (Sadece Admin)</label>
-                    <select name="dealerId" class="form-nova" required>
-                        <option value="">-- Lütfen Bayi Seçiniz --</option>
-                        @foreach (var d in dealers)
-                        {
-                            <option value="@d.Id">@d.FullName - @d.CompanyName</option>
-                        }
-                    </select>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Siparişi oluşturacağınız bayiyi seçin.</div>
+<form method="post" action="/Product/@(isEdit ? $"Edit/{Model.Id}" : "Create")">
+    @Html.AntiForgeryToken()
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-circle-info" style="color:var(--accent-light);margin-right:8px"></i>Temel Bilgiler
                 </div>
-            }
-            <div class="col-md-@(dealers != null ? "4" : "6")">
-                <label class="form-label-nova"><i class="fa-solid fa-warehouse" style="color:var(--text-muted);margin-right:6px"></i>Sevk Deposu Seçimi</label>
-                <select name="warehouseId" class="form-nova" required>
-                    <option value="">-- Lütfen Depo Seçiniz --</option>
-                    @foreach(var w in warehouses)
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label-nova" asp-for="Name">Ürün Adı *</label>
+                        <input asp-for="Name" class="form-nova" placeholder="Örn: Apple iPhone 15 Pro" />
+                        <span asp-validation-for="Name" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-nova" asp-for="SKU">SKU Kodu *</label>
+                        <input asp-for="SKU" class="form-nova" placeholder="Örn: APL-IPH15P" />
+                        <span asp-validation-for="SKU" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-nova" asp-for="Barcode">Barkod</label>
+                        <input asp-for="Barcode" class="form-nova barcode-input" placeholder="Okutun veya yazın" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-nova" asp-for="Description">Açıklama</label>
+                        <textarea asp-for="Description" class="form-nova" rows="3" placeholder="Ürün hakkında kısa açıklama..."></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova" asp-for="CategoryId">Kategori *</label>
+                        <select asp-for="CategoryId" class="form-nova">
+                            <option value="">-- Kategori Seçin --</option>
+                            @foreach (var c in Model.Categories)
+                            {
+                                if (Model.CategoryId == c.Id)
+                                {
+                                    <option value="@c.Id" selected>@c.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="CategoryId" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-nova" asp-for="SupplierId">Tedarikçi (Opsiyonel)</label>
+                        <select asp-for="SupplierId" class="form-nova">
+                            <option value="">-- Tedarikçi Seçin --</option>
+                            @foreach (var s in Model.Suppliers)
+                            {
+                                if (Model.SupplierId == s.Id)
+                                {
+                                    <option value="@s.Id" selected>@s.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@s.Id">@s.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-nova" asp-for="ImageUrl">Ana Görsel URL (opsiyonel)</label>
+                        <input asp-for="ImageUrl" class="form-nova" placeholder="https://example.com/image.jpg" />
+                    </div>
+
+                    <!-- Çoklu Görsel URL'leri -->
+                    <div class="col-12">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-muted)">
+                            <i class="fa-solid fa-images" style="margin-right:6px"></i>Galeri Görselleri (URL)
+                            <span style="font-size:11px;font-weight:400;margin-left:8px">(Her satıra bir URL)</span>
+                        </div>
+                        <textarea id="imageUrlsInput" class="form-nova" rows="3"
+                                  placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.jpg"
+                                  style="font-family:monospace;font-size:12px">@{
+                            if (!string.IsNullOrEmpty(Model.SpecsJson)) {
+                                try {
+                                    var existing = System.Text.Json.JsonSerializer.Deserialize<NovaStock.Web.ViewModels.ProductSpecsData>(Model.SpecsJson);
+                                    if (existing?.ImageUrls?.Any() == true) { @string.Join("\n", existing.ImageUrls) }
+                                } catch {}
+                            }
+                        }</textarea>
+                    </div>
+
+                    @if (User.IsInRole("Admin"))
                     {
-                        <option value="@w.Id">@w.Name - @w.City</option>
+                    <!-- API Otomatik Doldur Butonu -->
+                    <div class="col-12">
+                        <div style="padding:14px;border-radius:12px;background:rgba(99,179,237,.06);border:1px solid rgba(99,179,237,.2)">
+                            <div style="font-size:13px;font-weight:600;color:var(--accent-light);margin-bottom:10px">
+                                <i class="fa-solid fa-bolt"></i> API'den Otomatik Doldur
+                            </div>
+                            <div style="display:flex;gap:8px">
+                                <input type="text" id="apiSearchQuery" class="form-nova" style="flex:1"
+                                       placeholder="Örn: Samsung Galaxy S24" />
+                                <button type="button" class="btn-nova" id="fetchSpecsBtn" onclick="fetchSpecs()">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Getir
+                                </button>
+                            </div>
+                            <div id="fetchResult" style="margin-top:8px;font-size:12px;color:var(--text-muted)"></div>
+                        </div>
+                    </div>
                     }
-                </select>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Siparişin çıkacağı ana depoyu belirleyin.</div>
-            </div>
-            <div class="col-md-@(dealers != null ? "4" : "6")">
-                <label class="form-label-nova"><i class="fa-solid fa-note-sticky" style="color:var(--text-muted);margin-right:6px"></i>Sipariş Notu (Opsiyonel)</label>
-                <input type="text" name="notes" class="form-nova" placeholder="Örn: Hafta içi teslim edilsin." />
+                </div>
             </div>
         </div>
 
-        <!-- Ürün Filtresi -->
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <label class="form-label-nova"><i class="fa-solid fa-filter" style="color:var(--text-muted);margin-right:6px"></i>Tedarikçiye Göre Filtrele</label>
-                <select id="supplierFilter" class="form-nova" onchange="filterProductsBySupplier()">
-                    <option value="">Tüm Ürünler</option>
-                    @foreach (var s in suppliers)
-                    {
-                        <option value="@s.Id">@s.Name</option>
-                    }
-                </select>
+        <!-- Teknik Özellikler -->
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-microchip" style="color:var(--accent-light);margin-right:8px"></i>
+                    Teknik Özellikler
+                    <span style="font-size:11px;color:var(--text-muted);font-weight:400;margin-left:8px">(Opsiyonel)</span>
+                </div>
+                <div id="techSpecsContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+                <button type="button" onclick="addTechSpec()" class="btn-nova-outline" style="margin-top:10px;font-size:12px">
+                    <i class="fa-solid fa-plus"></i> Satır Ekle
+                </button>
             </div>
         </div>
 
-        <!-- Ürün Listesi -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <div style="font-size:15px;font-weight:600;color:var(--accent)"><i class="fa-solid fa-box-open" style="margin-right:8px"></i>Sipariş Kalemleri</div>
-            <button type="button" class="btn-nova-outline" onclick="addRow()"><i class="fa-solid fa-plus"></i> Ürün Satırı Ekle</button>
+        <!-- Lojistik & Uyumluluk -->
+        <div class="col-12">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="glass-card p-4">
+                        <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                            <i class="fa-solid fa-truck-ramp-box" style="color:var(--yellow);margin-right:8px"></i>Lojistik
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label-nova">Ağırlık (gram)</label>
+                                <input type="number" id="logWeightGrams" class="form-nova" placeholder="Örn: 189" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label-nova">Desi</label>
+                                <input type="number" step="0.01" id="logDesi" class="form-nova" placeholder="Otomatik" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label-nova">En (cm)</label>
+                                <input type="number" step="0.1" id="logWidthCm" class="form-nova" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label-nova">Boy (cm)</label>
+                                <input type="number" step="0.1" id="logHeightCm" class="form-nova" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label-nova">Derinlik (cm)</label>
+                                <input type="number" step="0.1" id="logDepthCm" class="form-nova" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card p-4">
+                        <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                            <i class="fa-solid fa-file-contract" style="color:var(--cyan);margin-right:8px"></i>Yasal & Uyumluluk
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label-nova">GTİP Kodu</label>
+                                <input type="text" id="compGtip" class="form-nova" placeholder="Örn: 847130000000" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label-nova">Garanti (Ay)</label>
+                                <input type="number" id="compWarranty" class="form-nova" placeholder="24" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label-nova">Menşei</label>
+                                <input type="text" id="compOrigin" class="form-nova" placeholder="Örn: Çin" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label-nova">Sertifikalar</label>
+                                <input type="text" id="compCerts" class="form-nova"
+                                       placeholder="CE, RoHS, ISO (virgülle ayırın)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div style="overflow-x:auto">
-            <table class="nova-table" id="itemsTable">
-                <thead>
-                    <tr>
-                        <th style="width:50%">Ürün Seçimi</th>
-                        <th style="width:20%">Adet</th>
-                        <th style="width:20%">Stok Durumu</th>
-                        <th style="width:10%;text-align:right">İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="itemsTbody">
-                    <!-- Dinamik satırlar buraya eklenecek -->
-                </tbody>
-            </table>
+        <!-- Gizli SpecsJson alanı -->
+        <input type="hidden" asp-for="SpecsJson" id="specsJsonInput" />
+
+        <div class="col-lg-4">
+            <div class="glass-card p-4 mb-3">
+                <div style="font-size:15px;font-weight:600;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-turkish-lira-sign" style="color:var(--green);margin-right:8px"></i>Fiyat & Stok
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label-nova" asp-for="BasePrice">Taban Fiyat (₺) *</label>
+                        <input asp-for="BasePrice" type="number" step="0.01" class="form-nova" placeholder="0.00" id="basePriceInput" />
+                        <span asp-validation-for="BasePrice" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-nova" asp-for="CostPrice">Maliyet Fiyatı (₺)</label>
+                        <input asp-for="CostPrice" type="number" step="0.01" class="form-nova" placeholder="0.00" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-nova" asp-for="VatRate">KDV Oranı (%)</label>
+                        <select asp-for="VatRate" class="form-nova">
+                            <option value="0">%0 (KDV'siz)</option>
+                            <option value="1">%1</option>
+                            <option value="10">%10</option>
+                            <option value="20" selected>%20</option>
+                        </select>
+                    </div>
+
+                    <!-- Bayi fiyat önizlemesi -->
+                    <div class="col-12">
+                        <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:12px">
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600">BAYİ FİYAT ÖNIZLEMESI</div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:12px;color:var(--bronze)"><i class="fa-solid fa-circle"></i> Bronze</span>
+                                <span id="bronzePrice" style="font-size:12px;font-weight:600;color:var(--bronze)">-</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:12px;color:var(--silver)"><i class="fa-solid fa-circle"></i> Silver (-5%)</span>
+                                <span id="silverPrice" style="font-size:12px;font-weight:600;color:var(--silver)">-</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between">
+                                <span style="font-size:12px;color:var(--gold)"><i class="fa-solid fa-circle"></i> Gold (-10%)</span>
+                                <span id="goldPrice" style="font-size:12px;font-weight:600;color:var(--gold)">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <label class="form-label-nova" asp-for="StockCount">Stok Miktarı *</label>
+                        <input asp-for="StockCount" type="number" min="0" class="form-nova" />
+                        <span asp-validation-for="StockCount" style="color:var(--red);font-size:12px"></span>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-nova" asp-for="CriticalStockLevel">Kritik Eşik</label>
+                        <input asp-for="CriticalStockLevel" type="number" min="1" class="form-nova" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-4">
+                <div style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                    <i class="fa-solid fa-gear" style="color:var(--yellow);margin-right:8px"></i>Durum
+                </div>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                    <input asp-for="IsActive" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)">
+                    <span style="font-size:14px">Ürün aktif</span>
+                </label>
+            </div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;margin-top:24px">
-            <button type="submit" class="btn-nova" style="padding:12px 24px;font-size:14px">
-                <i class="fa-solid fa-paper-plane"></i> Siparişi Tamamla
-            </button>
+        <div class="col-12">
+            <div style="display:flex;gap:12px;justify-content:flex-end">
+                <a href="/Product" class="btn-nova-outline">
+                    <i class="fa-solid fa-xmark"></i> İptal
+                </a>
+                <button type="submit" class="btn-nova">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    @(isEdit ? "Değişiklikleri Kaydet" : "Ürünü Ekle")
+                </button>
+            </div>
         </div>
-    </form>
-</div>
-
-<!-- Gizli Şablon (Satır Ekleme İçin) -->
-<template id="rowTemplate">
-    <tr class="item-row">
-        <td>
-            <select name="productIds" class="form-nova product-select" required onchange="updateStock(this)">
-                <option value="">-- Ürün Seçiniz --</option>
-            </select>
-        </td>
-        <td>
-            <input type="number" name="quantities" class="form-nova" min="1" value="1" required style="width:100px" />
-        </td>
-        <td>
-            <div class="stock-info badge-nova badge-gray">Seçim Bekleniyor</div>
-        </td>
-        <td style="text-align:right">
-            <button type="button" class="btn-danger-nova" onclick="this.closest('tr').remove()" title="Satırı Sil">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
-        </td>
-    </tr>
-</template>
+    </div>
+</form>
 
 @section Scripts {
-    <script>
-        const allProducts = [
-            @foreach (var p in products)
-            {
-                @: { id: "@p.Id", text: "@Html.Raw($"{p.SKU} - {p.Name} ({p.BasePrice.ToString("N2")} ₺)")", stock: @p.StockCount, critical: @p.CriticalStockLevel, supplierId: "@(p.SupplierId?.ToString() ?? "")" },
-            }
-        ];
+<script>
+    // ── Fiyat Önizleme ───────────────────────────────────────────────────────
+    const basePriceInput = document.getElementById('basePriceInput');
+    function updatePrices() {
+        const base = parseFloat(basePriceInput.value) || 0;
+        const fmt = v => v.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₺';
+        document.getElementById('bronzePrice').textContent = fmt(base);
+        document.getElementById('silverPrice').textContent = fmt(base * 0.95);
+        document.getElementById('goldPrice').textContent   = fmt(base * 0.90);
+    }
+    basePriceInput.addEventListener('input', updatePrices);
+    updatePrices();
 
-        // Sayfa yüklendiğinde varsayılan 1 satır ekle
-        document.addEventListener('DOMContentLoaded', () => {
-            addRow();
+    // ── Teknik Özellikler Editörü ─────────────────────────────────────────────
+    function addTechSpec(key = '', value = '') {
+        const container = document.getElementById('techSpecsContainer');
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px;align-items:center';
+        row.innerHTML = `
+            <input type="text" class="form-nova spec-key" placeholder="Özellik (Örn: RAM)" value="${key}" style="flex:1" />
+            <input type="text" class="form-nova spec-val" placeholder="Değer (Örn: 8 GB)" value="${value}" style="flex:2" />
+            <button type="button" onclick="this.parentElement.remove()"
+                    style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);
+                           width:34px;height:34px;border-radius:8px;cursor:pointer;flex-shrink:0">
+                <i class="fa-solid fa-xmark"></i>
+            </button>`;
+        container.appendChild(row);
+    }
+
+    // ── Mevcut SpecsJson'u forma yükle ───────────────────────────────────────
+    (function loadExistingSpecs() {
+        const raw = document.getElementById('specsJsonInput')?.value;
+        if (!raw) return;
+        try {
+            const data = JSON.parse(raw);
+            // Teknik özellikler
+            if (data.Technical) {
+                Object.entries(data.Technical).forEach(([k, v]) => addTechSpec(k, v));
+            }
+            // Lojistik
+            const log = data.Logistics || {};
+            if (log.WeightGrams) document.getElementById('logWeightGrams').value = log.WeightGrams;
+            if (log.WidthCm)     document.getElementById('logWidthCm').value     = log.WidthCm;
+            if (log.HeightCm)    document.getElementById('logHeightCm').value    = log.HeightCm;
+            if (log.DepthCm)     document.getElementById('logDepthCm').value     = log.DepthCm;
+            if (log.Desi)        document.getElementById('logDesi').value        = log.Desi;
+            // Uyumluluk
+            const comp = data.Compliance || {};
+            if (comp.GtipCode)       document.getElementById('compGtip').value     = comp.GtipCode;
+            if (comp.WarrantyMonths) document.getElementById('compWarranty').value = comp.WarrantyMonths;
+            if (comp.Origin)         document.getElementById('compOrigin').value   = comp.Origin;
+            if (comp.Certifications?.length)
+                document.getElementById('compCerts').value = comp.Certifications.join(', ');
+        } catch {}
+    })();
+
+    // ── Form Submit'te SpecsJson oluştur ─────────────────────────────────────
+    document.querySelector('form').addEventListener('submit', function() {
+        const imageLines = (document.getElementById('imageUrlsInput')?.value || '')
+            .split('\n').map(l => l.trim()).filter(l => l);
+
+        const tech = {};
+        document.querySelectorAll('#techSpecsContainer > div').forEach(row => {
+            const k = row.querySelector('.spec-key')?.value.trim();
+            const v = row.querySelector('.spec-val')?.value.trim();
+            if (k && v) tech[k] = v;
         });
 
-        function filterProductsBySupplier() {
-            const supplierId = document.getElementById('supplierFilter').value;
+        const w = parseFloat(document.getElementById('logWidthCm')?.value) || null;
+        const h = parseFloat(document.getElementById('logHeightCm')?.value) || null;
+        const d = parseFloat(document.getElementById('logDepthCm')?.value) || null;
+        const autoDesi = (w && h && d) ? Math.round((w * h * d) / 5000 * 100) / 100 : null;
 
-            document.querySelectorAll('select.product-select').forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = '<option value="">-- Ürün Seçiniz --</option>';
+        const specsData = {
+            ImageUrls: imageLines,
+            Technical: tech,
+            Logistics: {
+                WeightGrams: parseFloat(document.getElementById('logWeightGrams')?.value) || null,
+                WidthCm:     w,
+                HeightCm:    h,
+                DepthCm:     d,
+                Desi:        parseFloat(document.getElementById('logDesi')?.value) || autoDesi
+            },
+            Compliance: {
+                GtipCode:       document.getElementById('compGtip')?.value.trim() || null,
+                WarrantyMonths: parseInt(document.getElementById('compWarranty')?.value) || null,
+                Origin:         document.getElementById('compOrigin')?.value.trim() || null,
+                Certifications: (document.getElementById('compCerts')?.value || '')
+                    .split(',').map(c => c.trim()).filter(c => c)
+            }
+        };
 
-                allProducts.forEach(p => {
-                    if (!supplierId || p.supplierId === supplierId || p.supplierId === "") {
-                        const opt = document.createElement('option');
-                        opt.value = p.id;
-                        opt.textContent = p.text;
-                        opt.setAttribute('data-stock', p.stock);
-                        opt.setAttribute('data-critical', p.critical);
-                        if (p.id === currentValue) {
-                            opt.selected = true;
-                        }
-                        select.appendChild(opt);
-                    }
-                });
-                updateStock(select);
-            });
-        }
+        document.getElementById('specsJsonInput').value = JSON.stringify(specsData);
+    });
 
-        function getFilteredProductOptions() {
-            const supplierId = document.getElementById('supplierFilter').value;
-            let html = '<option value="">-- Ürün Seçiniz --</option>';
-            allProducts.forEach(p => {
-                if (!supplierId || p.supplierId === supplierId || p.supplierId === "") {
-                    html += `<option value="${p.id}" data-stock="${p.stock}" data-critical="${p.critical}">${p.text}</option>`;
-                }
-            });
-            return html;
-        }
-
-        function addRow() {
-            const template = document.getElementById('rowTemplate');
-            const tbody = document.getElementById('itemsTbody');
-            const clone = template.content.cloneNode(true);
-            
-            // Satır eklendikten sonra ürün listesini filtreye göre doldur
-            const newSelect = clone.querySelector('select.product-select');
-            newSelect.innerHTML = getFilteredProductOptions();
-
-            tbody.appendChild(clone);
-        }
-
-        function updateStock(selectElem) {
-            const tr = selectElem.closest('tr');
-            const stockInfo = tr.querySelector('.stock-info');
-            const option = selectElem.options[selectElem.selectedIndex];
-
-            if(!option || !option.value) {
-                stockInfo.className = 'stock-info badge-nova badge-gray';
-                stockInfo.innerHTML = 'Seçim Bekleniyor';
+    // ── API'den Otomatik Doldur ───────────────────────────────────────────────
+    async function fetchSpecs() {
+        const query = document.getElementById('apiSearchQuery')?.value.trim();
+        if (!query) return;
+        const btn = document.getElementById('fetchSpecsBtn');
+        const result = document.getElementById('fetchResult');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aranıyor...';
+        result.textContent = '';
+        try {
+            const res  = await fetch(`/Product/FetchSpecs?query=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            if (!data.found) {
+                result.innerHTML = `<span style="color:var(--yellow)"><i class="fa-solid fa-triangle-exclamation"></i> ${data.message || 'Sonuç bulunamadı.'}</span>`;
                 return;
             }
-
-            const stock = parseInt(option.getAttribute('data-stock'));
-            const critical = parseInt(option.getAttribute('data-critical'));
-
-            stockInfo.innerHTML = `${stock} Adet`;
-
-            if(stock <= 0) {
-                stockInfo.className = 'stock-info badge-nova badge-red';
-                stockInfo.innerHTML = 'Stok Yok!';
-            } else if(stock <= critical) {
-                stockInfo.className = 'stock-info badge-nova badge-yellow';
-            } else {
-                stockInfo.className = 'stock-info badge-nova badge-green';
+            // Teknik özellikleri doldur
+            document.getElementById('techSpecsContainer').innerHTML = '';
+            if (data.specs) {
+                Object.entries(data.specs).forEach(([k, v]) => addTechSpec(k, v));
             }
+            // Ana görseli doldur
+            if (data.thumbnail) {
+                const imgInput = document.querySelector('[name="ImageUrl"]');
+                if (imgInput && !imgInput.value) imgInput.value = data.thumbnail;
+                const urlsArea = document.getElementById('imageUrlsInput');
+                if (urlsArea && !urlsArea.value.includes(data.thumbnail)) {
+                    urlsArea.value = (urlsArea.value ? urlsArea.value + '\n' : '') + data.thumbnail;
+                }
+            }
+            result.innerHTML = `<span style="color:var(--green)"><i class="fa-solid fa-check"></i> "${data.phoneName}" için ${Object.keys(data.specs||{}).length} özellik yüklendi!</span>`;
+        } catch (err) {
+            result.innerHTML = `<span style="color:var(--red)"><i class="fa-solid fa-xmark"></i> Bağlantı hatası.</span>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Getir';
         }
-    </script>
+    }
+</script>
 }

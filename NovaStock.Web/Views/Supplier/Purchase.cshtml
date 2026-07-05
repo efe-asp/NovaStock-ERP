@@ -159,7 +159,7 @@
             select.innerHTML = '<option value="">Ürün seç...</option>';
 
             allProducts.forEach(p => {
-                if (!supplierId || p.supplierId === supplierId || p.supplierId === "") {
+                if (!supplierId || p.supplierId === supplierId) {
                     const opt = document.createElement('option');
                     opt.value = p.value;
                     opt.textContent = p.text;
@@ -184,7 +184,7 @@
 
         let html = '<option value="">Ürün seç...</option>';
         allProducts.forEach(p => {
-            if (!supplierId || p.supplierId === supplierId || p.supplierId === "") {
+            if (!supplierId || p.supplierId === supplierId) {
                 html += `<option value="${p.value}">${p.text}</option>`;
             }
         });

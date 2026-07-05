@@ -50,11 +50,14 @@ public class ProductController : Controller
 
         // ── Dinamik Filtreleme (Smart Search) ──────────────────────────────────
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+        {
+            var search = filter.SearchTerm.ToLower();
             query = query.Where(p =>
-                p.Name.Contains(filter.SearchTerm) ||
-                p.SKU.Contains(filter.SearchTerm)  ||
-                (p.Barcode != null && p.Barcode.Contains(filter.SearchTerm)) ||
-                (p.Description != null && p.Description.Contains(filter.SearchTerm)));
+                p.Name.ToLower().Contains(search) ||
+                p.SKU.ToLower().Contains(search)  ||
+                (p.Barcode != null && p.Barcode.ToLower().Contains(search)) ||
+                (p.Description != null && p.Description.ToLower().Contains(search)));
+        }
 
         if (filter.CategoryId.HasValue)
             query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
