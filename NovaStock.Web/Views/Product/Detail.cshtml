@@ -53,6 +53,10 @@
 .sku-badge            { font-family:monospace; font-size:13px; padding:4px 10px;
                         background:rgba(var(--accent-rgb),.15); border:1px solid rgba(var(--accent-rgb),.3);
                         border-radius:8px; color:var(--accent-light); display:inline-block; }
+/* ─── Progress Bar ────────────────────────────── */
+.stock-bar-wrap       { background:rgba(255,255,255,.06); border-radius:6px;
+                        height:8px; overflow:hidden; margin-top:6px; }
+.stock-bar-fill       { height:100%; border-radius:6px; transition:width .8s ease; }
 </style>
 
 <!-- Page Header -->
@@ -152,6 +156,50 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- ② Depo Dağılımı -->
+        <div class="glass-card p-4">
+            <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                <i class="fa-solid fa-warehouse" style="color:var(--cyan);margin-right:8px"></i>
+                Depo Bazlı Stok Dağılımı
+                <span style="float:right;font-size:13px;color:var(--text-muted)">Toplam: <strong style="color:var(--@(isCrit ? "red" : "green"))">@p.StockCount Adet</strong></span>
+            </div>
+
+            @if (p.ProductWarehouses.Any())
+            {
+                <div style="display:flex;flex-direction:column;gap:14px">
+                    @foreach (var pw in p.ProductWarehouses.OrderByDescending(w => w.Quantity))
+                    {
+                        var pct = p.StockCount > 0 ? (int)((pw.Quantity / (double)p.StockCount) * 100) : 0;
+                        var barColor = pw.Quantity == 0 ? "var(--red)" : pw.Quantity <= p.CriticalStockLevel ? "var(--yellow)" : "var(--accent)";
+                        <div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                                <div>
+                                    <span style="font-size:13px;font-weight:600">@pw.Warehouse?.Name</span>
+                                    @if (!string.IsNullOrEmpty(pw.Location))
+                                    {
+                                        <span style="font-size:11px;color:var(--text-muted);margin-left:8px">
+                                            <i class="fa-solid fa-location-dot"></i> @pw.Location
+                                        </span>
+                                    }
+                                </div>
+                                <span style="font-size:13px;font-weight:700;color:@barColor">@pw.Quantity Adet</span>
+                            </div>
+                            <div class="stock-bar-wrap">
+                                <div class="stock-bar-fill" style="width:@pct%;background:@barColor"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align:center;padding:32px;color:var(--text-muted)">
+                    <i class="fa-solid fa-box-open" style="font-size:32px;opacity:.2;display:block;margin-bottom:10px"></i>
+                    Bu ürün henüz hiçbir depoya atanmamış.
+                </div>
+            }
         </div>
     </div>
 
