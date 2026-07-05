@@ -90,7 +90,14 @@
                         </div>
                         <textarea id="imageUrlsInput" class="form-nova" rows="3"
                                   placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.jpg"
-                                  style="font-family:monospace;font-size:12px"></textarea>
+                                  style="font-family:monospace;font-size:12px">@{
+                            if (!string.IsNullOrEmpty(Model.SpecsJson)) {
+                                try {
+                                    var existing = System.Text.Json.JsonSerializer.Deserialize<NovaStock.Web.ViewModels.ProductSpecsData>(Model.SpecsJson);
+                                    if (existing?.ImageUrls?.Any() == true) { @string.Join("\n", existing.ImageUrls) }
+                                } catch {}
+                            }
+                        }</textarea>
                     </div>
 
                     @if (User.IsInRole("Admin"))
@@ -112,9 +119,6 @@
                         </div>
                     </div>
                     }
-
-                    <!-- Gizli SpecsJson alanı -->
-                    <input type="hidden" asp-for="SpecsJson" id="specsJsonInput" />
                 </div>
             </div>
         </div>
@@ -133,6 +137,70 @@
                 </button>
             </div>
         </div>
+
+        <!-- Lojistik & Uyumluluk -->
+        <div class="col-12">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="glass-card p-4">
+                        <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                            <i class="fa-solid fa-truck-ramp-box" style="color:var(--yellow);margin-right:8px"></i>Lojistik
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label-nova">Ağırlık (gram)</label>
+                                <input type="number" id="logWeightGrams" class="form-nova" placeholder="Örn: 189" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label-nova">Desi</label>
+                                <input type="number" step="0.01" id="logDesi" class="form-nova" placeholder="Otomatik" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label-nova">En (cm)</label>
+                                <input type="number" step="0.1" id="logWidthCm" class="form-nova" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label-nova">Boy (cm)</label>
+                                <input type="number" step="0.1" id="logHeightCm" class="form-nova" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label-nova">Derinlik (cm)</label>
+                                <input type="number" step="0.1" id="logDepthCm" class="form-nova" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card p-4">
+                        <div style="font-size:15px;font-weight:600;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+                            <i class="fa-solid fa-file-contract" style="color:var(--cyan);margin-right:8px"></i>Yasal & Uyumluluk
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label-nova">GTİP Kodu</label>
+                                <input type="text" id="compGtip" class="form-nova" placeholder="Örn: 847130000000" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label-nova">Garanti (Ay)</label>
+                                <input type="number" id="compWarranty" class="form-nova" placeholder="24" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label-nova">Menşei</label>
+                                <input type="text" id="compOrigin" class="form-nova" placeholder="Örn: Çin" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label-nova">Sertifikalar</label>
+                                <input type="text" id="compCerts" class="form-nova"
+                                       placeholder="CE, RoHS, ISO (virgülle ayırın)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gizli SpecsJson alanı -->
+        <input type="hidden" asp-for="SpecsJson" id="specsJsonInput" />
 
         <div class="col-lg-4">
             <div class="glass-card p-4 mb-3">
@@ -252,12 +320,24 @@
         if (!raw) return;
         try {
             const data = JSON.parse(raw);
-            if (data.ImageUrls?.length) {
-                document.getElementById('imageUrlsInput').value = data.ImageUrls.join('\n');
-            }
+            // Teknik özellikler
             if (data.Technical) {
                 Object.entries(data.Technical).forEach(([k, v]) => addTechSpec(k, v));
             }
+            // Lojistik
+            const log = data.Logistics || {};
+            if (log.WeightGrams) document.getElementById('logWeightGrams').value = log.WeightGrams;
+            if (log.WidthCm)     document.getElementById('logWidthCm').value     = log.WidthCm;
+            if (log.HeightCm)    document.getElementById('logHeightCm').value    = log.HeightCm;
+            if (log.DepthCm)     document.getElementById('logDepthCm').value     = log.DepthCm;
+            if (log.Desi)        document.getElementById('logDesi').value        = log.Desi;
+            // Uyumluluk
+            const comp = data.Compliance || {};
+            if (comp.GtipCode)       document.getElementById('compGtip').value     = comp.GtipCode;
+            if (comp.WarrantyMonths) document.getElementById('compWarranty').value = comp.WarrantyMonths;
+            if (comp.Origin)         document.getElementById('compOrigin').value   = comp.Origin;
+            if (comp.Certifications?.length)
+                document.getElementById('compCerts').value = comp.Certifications.join(', ');
         } catch {}
     })();
 
@@ -273,11 +353,28 @@
             if (k && v) tech[k] = v;
         });
 
+        const w = parseFloat(document.getElementById('logWidthCm')?.value) || null;
+        const h = parseFloat(document.getElementById('logHeightCm')?.value) || null;
+        const d = parseFloat(document.getElementById('logDepthCm')?.value) || null;
+        const autoDesi = (w && h && d) ? Math.round((w * h * d) / 5000 * 100) / 100 : null;
+
         const specsData = {
             ImageUrls: imageLines,
             Technical: tech,
-            Logistics: {},
-            Compliance: {}
+            Logistics: {
+                WeightGrams: parseFloat(document.getElementById('logWeightGrams')?.value) || null,
+                WidthCm:     w,
+                HeightCm:    h,
+                DepthCm:     d,
+                Desi:        parseFloat(document.getElementById('logDesi')?.value) || autoDesi
+            },
+            Compliance: {
+                GtipCode:       document.getElementById('compGtip')?.value.trim() || null,
+                WarrantyMonths: parseInt(document.getElementById('compWarranty')?.value) || null,
+                Origin:         document.getElementById('compOrigin')?.value.trim() || null,
+                Certifications: (document.getElementById('compCerts')?.value || '')
+                    .split(',').map(c => c.trim()).filter(c => c)
+            }
         };
 
         document.getElementById('specsJsonInput').value = JSON.stringify(specsData);
@@ -313,7 +410,6 @@
                     urlsArea.value = (urlsArea.value ? urlsArea.value + '\n' : '') + data.thumbnail;
                 }
             }
-
             result.innerHTML = `<span style="color:var(--green)"><i class="fa-solid fa-check"></i> "${data.phoneName}" için ${Object.keys(data.specs||{}).length} özellik yüklendi!</span>`;
         } catch (err) {
             result.innerHTML = `<span style="color:var(--red)"><i class="fa-solid fa-xmark"></i> Bağlantı hatası.</span>`;
