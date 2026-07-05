@@ -192,6 +192,20 @@
                         </div>
                     }
                 </div>
+
+                <!-- Kritik Stok Eşiği -->
+                <div style="margin-top:18px;padding:12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border-glass)">
+                    <div style="display:flex;justify-content:space-between;font-size:13px">
+                        <span style="color:var(--text-muted)"><i class="fa-solid fa-triangle-exclamation" style="color:var(--yellow)"></i> Kritik Eşik</span>
+                        <span style="font-weight:700;color:var(--yellow)">@p.CriticalStockLevel Adet</span>
+                    </div>
+                    <div class="stock-bar-wrap" style="margin-top:8px;height:6px">
+                        @{
+                            var critPct = p.StockCount > 0 ? Math.Min((int)((p.CriticalStockLevel / (double)p.StockCount) * 100), 100) : 100;
+                        }
+                        <div class="stock-bar-fill" style="width:@critPct%;background:var(--yellow)"></div>
+                    </div>
+                </div>
             }
             else
             {
