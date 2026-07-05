@@ -37,6 +37,22 @@ public class Product : BaseEntity
 
     public string? ImageUrl { get; set; }
 
+    /// <summary>Ürünün alış/maliyet fiyatı (tedarikçiden gelme fiyatı).</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? CostPrice { get; set; }
+
+    /// <summary>KDV oranı (örn: 20 = %20). Null ise varsayılan %20 uygulanır.</summary>
+    public int VatRate { get; set; } = 20;
+
+    /// <summary>
+    /// Ürün detay JSON verisi. İçerir:
+    /// - ImageUrls: Çoklu görsel URL listesi
+    /// - Technical: Teknik özellikler (Key-Value)
+    /// - Logistics: Lojistik/paketleme bilgileri
+    /// - Compliance: Yasal/uyumluluk bilgileri (GTİP, Garanti, Menşei, Sertifikalar)
+    /// </summary>
+    public string? SpecsJson { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     // Relations
