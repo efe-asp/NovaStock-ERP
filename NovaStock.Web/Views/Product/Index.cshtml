@@ -183,7 +183,12 @@
                     <td style="color:var(--text-muted);font-size:12px">@p.Id</td>
                     <td>
                         <div class="product-name-hover" style="font-weight:600;font-size:13px">
-                            @p.Name
+                            <a href="/Product/Detail/@p.Id"
+                               style="color:inherit;text-decoration:none;transition:color .2s"
+                               onmouseover="this.style.color='var(--accent-light)'"
+                               onmouseout="this.style.color='inherit'">
+                                @p.Name
+                            </a>
                             <div class="product-img-tooltip">
                                 @if (!string.IsNullOrEmpty(p.ImageUrl))
                                 {
