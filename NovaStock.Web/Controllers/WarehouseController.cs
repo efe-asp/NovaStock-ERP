@@ -50,7 +50,7 @@ public class WarehouseController : Controller
         if (from is null || from.Quantity < quantity)
         {
             TempData["Error"] = "Kaynak depoda yeterli stok yok.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Detail), new { id = fromWarehouseId });
         }
 
         var to = await _context.ProductWarehouses
@@ -73,7 +73,7 @@ public class WarehouseController : Controller
         }
 
         await _context.SaveChangesAsync();
-        TempData["Success"] = $"{quantity} adet stok transferi tamamlandı.";
-        return RedirectToAction(nameof(Index));
+        TempData["Success"] = $"{quantity} adet stok transferi başarıyla tamamlandı.";
+        return RedirectToAction(nameof(Detail), new { id = fromWarehouseId });
     }
 }
