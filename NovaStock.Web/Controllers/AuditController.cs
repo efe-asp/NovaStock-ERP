@@ -22,7 +22,7 @@ public class AuditController : Controller
     public async Task<IActionResult> Index(
         string? search,
         string? tableName,
-        string? action,
+        string? operation,
         DateTime? from,
         DateTime? to,
         int page = 1)
