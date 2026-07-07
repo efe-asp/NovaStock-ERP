@@ -220,7 +220,65 @@
 <div class="transfer-modal-overlay" id="transferOverlay">
     <div class="transfer-modal">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-            <div style="font-size:18px;font-weight:700">Stok Transfer</div>
+            <div style="font-size:18px;font-weight:700">
+                <i class="fa-solid fa-arrow-right-arrow-left" style="color:var(--accent);margin-right:8px"></i>
+                Stok Transfer
+            </div>
+            <button onclick="closeTransfer()"
+                    style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border-glass);background:none;cursor:pointer;color:var(--text-muted);font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1">
+                ×
+            </button>
         </div>
+
+        <form method="post" action="/Warehouse/Transfer" id="transferForm">
+            <input type="hidden" name="fromWarehouseId" value="@Model.Id" />
+            <input type="hidden" name="productId" id="transferProductId" />
+
+            <div class="mb-3">
+                <label class="form-label-nova">Urun</label>
+                <div id="transferProductName"
+                     style="font-weight:600;font-size:14px;padding:10px 14px;background:rgba(99,102,241,0.06);border-radius:10px;border:1px solid rgba(99,102,241,0.12)">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label-nova">Kaynak Depo</label>
+                <div style="font-size:13px;padding:10px 14px;background:rgba(0,0,0,0.03);border-radius:10px;border:1px solid var(--border-glass);color:var(--text-secondary)">
+                    <i class="fa-solid fa-warehouse" style="margin-right:6px;color:var(--text-muted)"></i>
+                    @Model.Name - @Model.City
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label-nova" for="toWarehouseId">Hedef Depo</label>
+                <select name="toWarehouseId" id="toWarehouseId" class="form-nova" required>
+                    <option value="">— Depo Secin —</option>
+                    @foreach (var wh in allWarehouses)
+                    {
+                        <option value="@wh.Id">@wh.Name - @wh.City</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label-nova" for="transferQty">
+                    Miktar
+                    <span id="maxQtyLabel" style="color:var(--text-muted);font-weight:400;margin-left:4px"></span>
+                </label>
+                <input type="number" name="quantity" id="transferQty"
+                       class="form-nova" min="1" required
+                       placeholder="Kac adet transfer edilsin?" />
+            </div>
+
+            <div style="display:flex;gap:10px">
+                <button type="button" onclick="closeTransfer()"
+                        class="btn-nova-outline" style="flex:1;justify-content:center">
+                    Iptal
+                </button>
+                <button type="submit" id="transferSubmitBtn" class="btn-nova" style="flex:2;justify-content:center">
+                    <i class="fa-solid fa-paper-plane"></i> Transferi Onayla
+                </button>
+            </div>
+        </form>
     </div>
 </div>
