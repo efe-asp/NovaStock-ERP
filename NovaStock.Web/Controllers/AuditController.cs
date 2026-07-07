@@ -35,8 +35,8 @@ public class AuditController : Controller
         if (!string.IsNullOrWhiteSpace(tableName))
             query = query.Where(l => l.TableName == tableName);
 
-        if (!string.IsNullOrWhiteSpace(action))
-            query = query.Where(l => l.Action == action);
+        if (!string.IsNullOrWhiteSpace(operation))
+            query = query.Where(l => l.Action == operation);
 
         if (from.HasValue)
             query = query.Where(l => l.Timestamp >= from.Value);
