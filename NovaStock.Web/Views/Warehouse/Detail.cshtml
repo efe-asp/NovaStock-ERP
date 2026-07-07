@@ -3,6 +3,25 @@
 @using Microsoft.EntityFrameworkCore
 @{
     ViewData["Title"] = $"{Model.Name} – Depo Detayi";
+    var totalQty = Model.ProductWarehouses.Sum(pw => pw.Quantity);
+    var productCount = Model.ProductWarehouses.Count;
+}
+
+@section Styles {
+<style>
+    .stat-mini {
+        background: rgba(99,102,241,0.06);
+        border: 1px solid rgba(99,102,241,0.12);
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex; align-items: center; gap: 14px;
+    }
+    .stat-mini-icon {
+        width: 42px; height: 42px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; flex-shrink: 0;
+    }
+</style>
 }
 
 <!-- Page Header -->
@@ -16,8 +35,66 @@
             <span style="font-size:13px;color:var(--text-primary);font-weight:500">@Model.Name</span>
         </div>
         <h1><i class="fa-solid fa-warehouse" style="color:var(--cyan);margin-right:10px"></i>@Model.Name</h1>
+        <div class="breadcrumb-nova">
+            <i class="fa-solid fa-location-dot" style="margin-right:4px;color:var(--accent-light)"></i>@Model.City
+            @if (!string.IsNullOrEmpty(Model.Address)) { <span style="margin:0 6px;opacity:.4">•</span><text>@Model.Address</text> }
+        </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
+        @if (Model.IsActive)
+        {
+            <span class="badge-nova badge-green"><i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Aktif Depo</span>
+        }
+        else
+        {
+            <span class="badge-nova badge-gray"><i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px"></i>Pasif</span>
+        }
         <a href="/Warehouse" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Geri</a>
     </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-mini">
+            <div class="stat-mini-icon" style="background:rgba(99,102,241,0.15);color:var(--accent)"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent)">@productCount</div>
+                <div style="font-size:12px;color:var(--text-muted)">Urun Cesidi</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-mini" style="background:rgba(6,182,212,0.06);border-color:rgba(6,182,212,0.12)">
+            <div class="stat-mini-icon" style="background:rgba(6,182,212,0.15);color:var(--cyan)"><i class="fa-solid fa-cubes"></i></div>
+            <div>
+                <div style="font-size:22px;font-weight:800;color:var(--cyan)">@totalQty</div>
+                <div style="font-size:12px;color:var(--text-muted)">Toplam Stok</div>
+            </div>
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.ManagerName))
+    {
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-mini" style="background:rgba(16,185,129,0.06);border-color:rgba(16,185,129,0.12)">
+                <div class="stat-mini-icon" style="background:rgba(16,185,129,0.15);color:var(--green)"><i class="fa-solid fa-user-tie"></i></div>
+                <div>
+                    <div style="font-size:14px;font-weight:700;color:var(--green)">@Model.ManagerName</div>
+                    <div style="font-size:12px;color:var(--text-muted)">Depo Sorumlusu</div>
+                </div>
+            </div>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.Phone))
+    {
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-mini" style="background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.12)">
+                <div class="stat-mini-icon" style="background:rgba(245,158,11,0.15);color:var(--yellow)"><i class="fa-solid fa-phone"></i></div>
+                <div>
+                    <div style="font-size:14px;font-weight:700;color:var(--yellow)">@Model.Phone</div>
+                    <div style="font-size:12px;color:var(--text-muted)">Telefon</div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
