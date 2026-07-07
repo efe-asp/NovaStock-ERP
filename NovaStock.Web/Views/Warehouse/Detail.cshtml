@@ -217,7 +217,7 @@
 </div>
 
 <!-- Modal Overlay -->
-<div class="transfer-modal-overlay" id="transferOverlay">
+<div class="transfer-modal-overlay" id="transferOverlay" onclick="closeOnBackdrop(event)">
     <div class="transfer-modal">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
             <div style="font-size:18px;font-weight:700">
@@ -282,3 +282,54 @@
         </form>
     </div>
 </div>
+
+<script>
+    function openTransfer(productId, productName, maxQty) {
+        document.getElementById('transferProductId').value = productId;
+        document.getElementById('transferProductName').textContent = productName;
+        document.getElementById('transferQty').max = maxQty;
+        document.getElementById('transferQty').value = '';
+        document.getElementById('maxQtyLabel').textContent = '(Maks: ' + maxQty + ' adet)';
+        document.getElementById('toWarehouseId').value = '';
+        document.getElementById('transferOverlay').classList.add('show');
+        setTimeout(function() { document.getElementById('transferQty').focus(); }, 150);
+    }
+
+    function closeTransfer() {
+        document.getElementById('transferOverlay').classList.remove('show');
+    }
+
+    function closeOnBackdrop(e) {
+        if (e.target === document.getElementById('transferOverlay')) closeTransfer();
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeTransfer();
+    });
+
+    document.getElementById('transferForm').addEventListener('submit', function(e) {
+        var qty = parseInt(document.getElementById('transferQty').value);
+        var max = parseInt(document.getElementById('transferQty').max);
+        var dest = document.getElementById('toWarehouseId').value;
+
+        if (!dest) {
+            e.preventDefault();
+            alert('Lutfen bir hedef depo secin.');
+            return;
+        }
+        if (!qty || qty < 1) {
+            e.preventDefault();
+            alert('Lutfen gecerli bir miktar girin (en az 1).');
+            return;
+        }
+        if (max && qty > max) {
+            e.preventDefault();
+            alert('Maksimum ' + max + ' adet transfer yapabilirsiniz.');
+            return;
+        }
+
+        var btn = document.getElementById('transferSubmitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Isleniyor...';
+    });
+</script>
