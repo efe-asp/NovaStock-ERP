@@ -22,6 +22,16 @@
         font-size: 18px; flex-shrink: 0;
     }
     .product-row-hover:hover { background: rgba(99,102,241,0.04); }
+    .qty-badge {
+        display: inline-flex; align-items: center;
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.2);
+        color: var(--green);
+        padding: 3px 10px; border-radius: 20px;
+        font-size: 12px; font-weight: 700;
+    }
+    .qty-badge.low  { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: var(--red); }
+    .qty-badge.mid  { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); color: var(--yellow); }
 </style>
 }
 
@@ -132,6 +142,7 @@
                 <tbody>
                     @foreach (var pw in Model.ProductWarehouses.OrderByDescending(x => x.Quantity))
                     {
+                        var qtyClass = pw.Quantity == 0 ? "low" : pw.Quantity < 10 ? "mid" : "";
                         <tr class="product-row-hover">
                             <td>
                                 <div style="font-weight:600;font-size:13px">@pw.Product?.Name</div>
@@ -153,7 +164,7 @@
                                 }
                                 else { <span style="color:var(--text-muted);font-size:12px">—</span> }
                             </td>
-                            <td>@pw.Quantity adet</td>
+                            <td><span class="qty-badge @qtyClass">@pw.Quantity adet</span></td>
                         </tr>
                     }
                 </tbody>
