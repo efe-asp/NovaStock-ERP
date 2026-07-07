@@ -231,6 +231,7 @@
         </div>
 
         <form method="post" action="/Warehouse/Transfer" id="transferForm">
+            @Html.AntiForgeryToken()
             <input type="hidden" name="fromWarehouseId" value="@Model.Id" />
             <input type="hidden" name="productId" id="transferProductId" />
 
