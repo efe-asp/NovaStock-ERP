@@ -3,12 +3,35 @@
 @using Microsoft.EntityFrameworkCore
 @{
     ViewData["Title"] = $"{Model.Name} – Depo Detayi";
+    var allWarehouses = await Db.Warehouses.Where(w => w.Id != Model.Id && w.IsActive).ToListAsync();
     var totalQty = Model.ProductWarehouses.Sum(pw => pw.Quantity);
     var productCount = Model.ProductWarehouses.Count;
 }
 
 @section Styles {
 <style>
+    .transfer-modal-overlay {
+        display: none;
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.45);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        align-items: center; justify-content: center;
+    }
+    .transfer-modal-overlay.show { display: flex; }
+    .transfer-modal {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-glass);
+        border-radius: 20px;
+        width: 100%; max-width: 480px;
+        padding: 32px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        animation: modalIn 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    @@keyframes modalIn {
+        from { opacity: 0; transform: translateY(-20px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
     .stat-mini {
         background: rgba(99,102,241,0.06);
         border: 1px solid rgba(99,102,241,0.12);
@@ -137,6 +160,7 @@
                         <th>Kategori</th>
                         <th>Raf / Bolum</th>
                         <th>Stok</th>
+                        <th style="text-align:right">Islem</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -165,10 +189,38 @@
                                 else { <span style="color:var(--text-muted);font-size:12px">—</span> }
                             </td>
                             <td><span class="qty-badge @qtyClass">@pw.Quantity adet</span></td>
+                            <td style="text-align:right">
+                                @if (allWarehouses.Any() && pw.Quantity > 0)
+                                {
+                                    var safeName = (pw.Product?.Name ?? "Urun").Replace("'", "\\'");
+                                    <button class="btn-nova-outline"
+                                            style="padding:6px 14px;font-size:12px"
+                                            onclick="openTransfer(@pw.ProductId, '@safeName', @pw.Quantity)">
+                                        <i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer
+                                    </button>
+                                }
+                                else if (!allWarehouses.Any())
+                                {
+                                    <span style="font-size:11px;color:var(--text-muted)">Hedef depo yok</span>
+                                }
+                                else
+                                {
+                                    <span style="font-size:11px;color:var(--text-muted)">Stok yok</span>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
     }
+</div>
+
+<!-- Modal Overlay -->
+<div class="transfer-modal-overlay" id="transferOverlay">
+    <div class="transfer-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <div style="font-size:18px;font-weight:700">Stok Transfer</div>
+        </div>
+    </div>
 </div>
