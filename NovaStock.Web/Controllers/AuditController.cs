@@ -56,6 +56,7 @@ public class AuditController : Controller
         ViewBag.Page       = page;
         ViewBag.TotalPages = (int)Math.Ceiling(total / (double)pageSize);
         ViewBag.Search     = search;
+        ViewBag.TableName  = tableName;
         ViewBag.TableNames = await _context.AuditLogs.Select(l => l.TableName).Distinct().ToListAsync();
 
         return View(logs);
