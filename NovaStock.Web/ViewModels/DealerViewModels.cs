@@ -58,3 +58,13 @@ public class DealerEditViewModel
 
     public bool IsActive { get; set; }
 }
+
+// ─── Cari Hesap Ekstresi ─────────────────────────────────────────────────────
+public class DealerStatementItem
+{
+    public int      Id          { get; set; }
+    public string   OrderNumber { get; set; } = string.Empty;
+    public decimal  Total       { get; set; }
+    public string   Status      { get; set; } = string.Empty;
+    public DateTime CreatedAt   { get; set; }
+}
