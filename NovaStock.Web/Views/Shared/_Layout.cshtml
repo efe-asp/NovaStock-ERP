@@ -449,23 +449,25 @@
         </a>
 
         <div class="sidebar-nav">
-            <div class="nav-section-label">Ana Menü</div>
-            <a href="/" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
-                <i class="fa-solid fa-gauge-high"></i> Dashboard
-            </a>
-            <a href="/Product" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")">
-                <i class="fa-solid fa-box-open"></i> Ürünler
-            </a>
-            <a href="/Order" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" ? "active" : "")">
-                <i class="fa-solid fa-cart-shopping"></i> Siparişler
-                @if (ViewBag.PendingCount != null && (int)ViewBag.PendingCount > 0)
-                {
-                    <span class="nav-badge">@ViewBag.PendingCount</span>
-                }
-            </a>
 
             @if (User.IsInRole("Admin"))
             {
+                @* ── ADMİN MENÜSÜ ──────────────────────────────────────────────────── *@
+                <div class="nav-section-label">Ana Menü</div>
+                <a href="/" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                    <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </a>
+                <a href="/Product" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")">
+                    <i class="fa-solid fa-box-open"></i> Ürünler
+                </a>
+                <a href="/Order" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" ? "active" : "")">
+                    <i class="fa-solid fa-cart-shopping"></i> Siparişler
+                    @if (ViewBag.PendingCount != null && (int)ViewBag.PendingCount > 0)
+                    {
+                        <span class="nav-badge">@ViewBag.PendingCount</span>
+                    }
+                </a>
+
                 <div class="nav-section-label" style="margin-top:10px;">Yönetim</div>
                 <a href="/Dealer" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dealer" ? "active" : "")">
                     <i class="fa-solid fa-users"></i> Bayiler
@@ -485,19 +487,53 @@
                 <a href="/Product/Recycle" class="nav-item-link">
                     <i class="fa-solid fa-trash-can-arrow-up"></i> Geri Dönüşüm
                 </a>
+
+                <div class="nav-section-label" style="margin-top:10px;">Raporlar</div>
+                <a href="/Report/Sales" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "Sales" ? "active" : "")">
+                    <i class="fa-solid fa-chart-line"></i> Satış Analitiği
+                </a>
+                <a href="/Report/StockValue" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "StockValue" ? "active" : "")">
+                    <i class="fa-solid fa-coins"></i> Stok Değeri
+                </a>
+                <a href="/Product/ExportExcel" class="nav-item-link">
+                    <i class="fa-solid fa-file-excel"></i> Excel Raporu
+                </a>
+            }
+            else
+            {
+                @* ── BAYİ MÜŞTERİ PORTALI MENÜSÜ ───────────────────────────────────── *@
+                <div class="nav-section-label">Ana Menü</div>
+                <a href="/" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                    <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </a>
+                <a href="/Product" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")">
+                    <i class="fa-solid fa-store"></i> Ürün Kataloğu
+                </a>
+                <a href="/Order" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" ? "active" : "")">
+                    <i class="fa-solid fa-clipboard-list"></i> Siparişlerim
+                    @if (ViewBag.PendingCount != null && (int)ViewBag.PendingCount > 0)
+                    {
+                        <span class="nav-badge">@ViewBag.PendingCount</span>
+                    }
+                </a>
+
+                <div class="nav-section-label" style="margin-top:10px;">Finans ve Raporlar</div>
+                <a href="/Dealer/Statement" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dealer" && ViewContext.RouteData.Values["action"]?.ToString() == "Statement" ? "active" : "")">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Cari Hesap Ekstresi
+                </a>
+                <a href="/Order?Frequent=true" class="nav-item-link">
+                    <i class="fa-solid fa-star"></i> Sık Satın Aldıklarım
+                </a>
+
+                <div class="nav-section-label" style="margin-top:10px;">Destek Sistemi</div>
+                <a href="/Support" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Support" ? "active" : "")" style="position:relative">
+                    <i class="fa-solid fa-headset"></i> Destek Talepleri
+                    <span style="margin-left:auto;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px">Yakında</span>
+                </a>
             }
 
-            <div class="nav-section-label" style="margin-top:10px;">Raporlar</div>
-            <a href="/Report/Sales" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "Sales" ? "active" : "")">
-                <i class="fa-solid fa-chart-line"></i> Satış Analitiği
-            </a>
-            <a href="/Report/StockValue" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "StockValue" ? "active" : "")">
-                <i class="fa-solid fa-coins"></i> Stok Değeri
-            </a>
-            <a href="/Product/ExportExcel" class="nav-item-link">
-                <i class="fa-solid fa-file-excel"></i> Excel Raporu
-            </a>
         </div>
+
 
         <!-- Sistem Ayarları -->
         @if (User.IsInRole("Admin"))
