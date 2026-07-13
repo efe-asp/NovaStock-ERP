@@ -1,0 +1,452 @@
+@model NovaStock.Web.ViewModels.DealerDashboardViewModel
+@{
+    var monthLabelsJson   = System.Text.Json.JsonSerializer.Serialize(Model.MonthLabels);
+    var purchaseDataJson  = System.Text.Json.JsonSerializer.Serialize(Model.MonthlyPurchaseData);
+    var catLabelsJson     = System.Text.Json.JsonSerializer.Serialize(Model.CategoryLabels);
+    var catDataJson       = System.Text.Json.JsonSerializer.Serialize(Model.CategoryPurchaseData);
+
+    var tierLabel  = Model.Tier.ToString();
+    var tierColor  = Model.Tier switch
+    {
+        NovaStock.Web.Models.DealerTier.Gold   => "#f59e0b",
+        NovaStock.Web.Models.DealerTier.Silver => "#64748b",
+        _                                      => "#b45309"
+    };
+    var tierGrad = Model.Tier switch
+    {
+        NovaStock.Web.Models.DealerTier.Gold   => "linear-gradient(135deg,#f59e0b,#d97706)",
+        NovaStock.Web.Models.DealerTier.Silver => "linear-gradient(135deg,#94a3b8,#64748b)",
+        _                                      => "linear-gradient(135deg,#d97706,#b45309)"
+    };
+    var tierIcon = Model.Tier switch
+    {
+        NovaStock.Web.Models.DealerTier.Gold   => "fa-medal",
+        NovaStock.Web.Models.DealerTier.Silver => "fa-award",
+        _                                      => "fa-ribbon"
+    };
+    var isDebt = Model.CurrentBalance > 0;
+}
+
+@section Styles {
+<style>
+    /* ── Dealer Dashboard Ekstra Stiller ───────────────────────────────────── */
+    .dealer-tier-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        border-radius: var(--radius);
+        padding: 22px;
+        position: relative; overflow: hidden;
+        transition: all var(--transition);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        cursor: default;
+    }
+    .dealer-tier-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .dealer-tier-card::after {
+        content: '';
+        position: absolute; top: -30px; right: -30px;
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        opacity: 0.07;
+    }
+    .dealer-tier-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+
+    .balance-positive { color: var(--green) !important; }
+    .balance-negative { color: var(--red)   !important; }
+
+    .credit-bar-wrap {
+        height: 6px; background: rgba(0,0,0,0.06);
+        border-radius: 3px; overflow: hidden; margin-top: 10px;
+    }
+    .credit-bar-fill {
+        height: 100%; border-radius: 3px;
+        transition: width 1s cubic-bezier(.4,0,.2,1);
+    }
+
+    .welcome-banner {
+        background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(14,165,233,0.06) 100%);
+        border: 1px solid rgba(99,102,241,0.15);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        display: flex; align-items: center; gap: 20px;
+        margin-bottom: 24px;
+    }
+    .welcome-avatar {
+        width: 54px; height: 54px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--cyan));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px; font-weight: 800; color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+    }
+    .tier-badge-large {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 14px; border-radius: 20px;
+        font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+    }
+    @@keyframes shimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+    .gold-shimmer {
+        background: linear-gradient(90deg, #f59e0b, #fcd34d, #f59e0b);
+        background-size: 200% auto;
+        animation: shimmer 3s linear infinite;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+}
+
+<!-- ── Hoş Geldiniz Bandı ─────────────────────────────────────────────────── -->
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-store" style="color:var(--accent-light);margin-right:10px"></i>Bayi Portalı</h1>
+        <div class="breadcrumb-nova">Hoş geldiniz · @DateTime.Now.ToString("dd MMMM yyyy, HH:mm", new System.Globalization.CultureInfo("tr-TR"))</div>
+    </div>
+    <a href="/Order/Create" class="btn-nova">
+        <i class="fa-solid fa-plus"></i> Yeni Sipariş Ver
+    </a>
+</div>
+
+<!-- ── 6 Özet Kart ───────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <!-- 1. Katalogdaki Ürünler -->
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="/Product" class="stat-card purple" style="display:block;text-decoration:none;cursor:pointer">
+            <div class="stat-icon purple"><i class="fa-solid fa-store"></i></div>
+            <div class="stat-value">@Model.CatalogProductCount</div>
+            <div class="stat-label">Katalogdaki Ürünler</div>
+        </a>
+    </div>
+
+    <!-- 2. Kargodaki Siparişlerim -->
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="/Order?Status=Shipped" class="stat-card cyan" style="display:block;text-decoration:none;cursor:pointer">
+            <div class="stat-icon cyan"><i class="fa-solid fa-truck-fast"></i></div>
+            <div class="stat-value">@Model.ShippedOrderCount</div>
+            <div class="stat-label">Kargodaki Siparişlerim</div>
+        </a>
+    </div>
+
+    <!-- 3. Bayi Segmentim (özel tasarım) -->
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="dealer-tier-card" style="--tier-color:@tierColor">
+            <style>
+                .dealer-tier-card::before { background: @tierGrad; }
+                .dealer-tier-card::after  { background: @tierColor; }
+            </style>
+            <div class="stat-icon" style="background:rgba(0,0,0,0.06);color:@tierColor;margin-bottom:10px">
+                <i class="fa-solid @tierIcon"></i>
+            </div>
+            <div class="stat-value" style="font-size:20px;font-weight:800;color:@tierColor;@(Model.Tier == NovaStock.Web.Models.DealerTier.Gold ? "background:linear-gradient(90deg,#f59e0b,#fbbf24,#f59e0b);background-size:200% auto;animation:shimmer 3s linear infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;" : "")">
+                @tierLabel Bayi
+            </div>
+            <div class="stat-label" style="margin-top:6px">
+                <span class="badge-nova" style="background:@tierColor;color:#fff;opacity:0.9;font-size:11px">
+                    %@Model.DealerDiscountRate.ToString("0") Özel İndirim
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Açık Siparişlerim -->
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="/Order?Status=Pending" class="stat-card yellow" style="display:block;text-decoration:none;cursor:pointer">
+            <div class="stat-icon yellow"><i class="fa-solid fa-clipboard-list"></i></div>
+            <div class="stat-value">@Model.OpenOrderCount</div>
+            <div class="stat-label">Açık Siparişlerim</div>
+        </a>
+    </div>
+
+    <!-- 5. Güncel Bakiyem -->
+    <div class="col-xl-2 col-md-4 col-6">
+        @{
+            var balanceCardColor = isDebt ? "red" : "green";
+            var balanceIcon      = isDebt ? "fa-triangle-exclamation" : "fa-circle-check";
+            var balanceLabel     = isDebt ? "Borcum" : "Alacağım";
+            var balancePrefix    = isDebt ? "" : "+";
+        }
+        <a href="/Dealer/Statement" class="stat-card @balanceCardColor" style="display:block;text-decoration:none;cursor:pointer">
+            <div class="stat-icon @balanceCardColor"><i class="fa-solid fa-scale-balanced"></i></div>
+            <div class="stat-value @(isDebt ? "balance-negative" : "balance-positive")" style="font-size:16px;font-weight:800">
+                @balancePrefix@Model.CurrentBalance.ToString("N0") ₺
+            </div>
+            <div class="stat-label">Güncel Bakiyem <span class="badge-nova @(isDebt ? "badge-red" : "badge-green")" style="font-size:10px;margin-left:4px">@balanceLabel</span></div>
+        </a>
+    </div>
+
+    <!-- 6. Kalan Kredi Limitim -->
+    <div class="col-xl-2 col-md-4 col-6">
+        @{
+            var usedPct   = Model.CreditLimit > 0 ? (double)Model.CurrentBalance / (double)Model.CreditLimit * 100 : 0;
+            var remaining = Model.CreditLimit - Model.CurrentBalance;
+            var barColor  = usedPct > 80 ? "var(--red)" : usedPct > 50 ? "var(--yellow)" : "var(--green)";
+        }
+        <div class="stat-card green" style="cursor:default">
+            <div class="stat-icon green"><i class="fa-solid fa-credit-card"></i></div>
+            <div class="stat-value" style="font-size:16px;font-weight:800;color:var(--green)">@remaining.ToString("N0") ₺</div>
+            <div class="stat-label">Kalan Kredi Limitim</div>
+            <div class="credit-bar-wrap">
+                <div class="credit-bar-fill" style="width:@Math.Min(usedPct,100).ToString("0")%;background:@barColor"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:4px">Limit: @Model.CreditLimit.ToString("N0") ₺</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Grafikler ──────────────────────────────────────────────────────────── -->
+<div class="row g-3" style="margin-bottom: 3.5rem;">
+
+    <!-- Aylık Satın Alma Trendi -->
+    <div class="col-xl-8">
+        <div class="glass-card p-4">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <div>
+                    <div style="font-size:15px;font-weight:600">Aylık Satın Alma Trendi</div>
+                    <div style="font-size:12px;color:var(--text-muted)">Son 12 Ay – Sadece Siparişlerim</div>
+                </div>
+                <span class="badge-nova badge-purple">Toplam: @Model.TotalPurchase.ToString("N0") ₺</span>
+            </div>
+            <div style="position:relative;height:280px;width:100%;margin-bottom:10px;">
+                <canvas id="dealerSalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kategori Dağılımı -->
+    <div class="col-xl-4">
+        <div class="glass-card p-4">
+            <div style="font-size:15px;font-weight:600;margin-bottom:4px">Kategori Dağılımım</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">En Çok Sipariş Verdiğim Kategoriler</div>
+            <div style="position:relative;height:280px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+                <canvas id="dealerCategoryChart"></canvas>
+            </div>
+            @if (!Model.CategoryLabels.Any())
+            {
+                <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">
+                    <i class="fa-regular fa-chart-pie" style="font-size:24px;opacity:0.4;margin-bottom:8px;display:block"></i>
+                    Henüz sipariş verisi yok.
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Alt Tablolar ───────────────────────────────────────────────────────── -->
+<div class="row g-3">
+
+    <!-- Son Siparişlerim -->
+    <div class="col-xl-7">
+        <div class="glass-card">
+            <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:15px;font-weight:600">
+                    <i class="fa-solid fa-receipt" style="color:var(--yellow);margin-right:8px"></i>Son Siparişlerim
+                </div>
+                <a href="/Order" class="btn-nova-outline" style="padding:6px 12px;font-size:12px">Tümünü Gör</a>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="nova-table">
+                    <thead><tr><th>Sipariş No</th><th>Tarih</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach (var o in Model.MyRecentOrders)
+                    {
+                        var badgeClass = o.Status switch {
+                            "Pending"   => "badge-yellow",
+                            "Approved"  => "badge-cyan",
+                            "Shipped"   => "badge-purple",
+                            "Delivered" => "badge-green",
+                            "Cancelled" => "badge-red",
+                            _           => "badge-gray"
+                        };
+                        var statusTr = o.Status switch {
+                            "Pending"   => "Bekliyor",
+                            "Approved"  => "Onaylandı",
+                            "Shipped"   => "Kargoda",
+                            "Delivered" => "Teslim Alındı",
+                            "Cancelled" => "İptal",
+                            _           => o.Status
+                        };
+                        <tr>
+                            <td style="font-family:monospace;font-size:12px">@o.OrderNumber</td>
+                            <td style="font-size:12px;color:var(--text-muted)">@o.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td style="font-weight:700;color:var(--green)">@o.Total.ToString("N2") ₺</td>
+                            <td><span class="badge-nova @badgeClass">@statusTr</span></td>
+                            <td>
+                                <a href="/Order/Detail/@o.Id" class="btn-nova-outline" style="padding:4px 10px;font-size:11px">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.MyRecentOrders.Any())
+                    {
+                        <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px">
+                            <i class="fa-solid fa-box-open" style="font-size:28px;opacity:0.3;margin-bottom:10px;display:block"></i>
+                            Henüz sipariş vermediniz.
+                            <br><a href="/Order/Create" class="btn-nova" style="margin-top:14px;display:inline-flex">İlk Siparişi Ver</a>
+                        </td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sık Satın Aldıklarım -->
+    <div class="col-xl-5">
+        <div class="glass-card">
+            <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:15px;font-weight:600">
+                    <i class="fa-solid fa-star" style="color:var(--gold);margin-right:8px"></i>Sık Satın Aldıklarım
+                </div>
+                <a href="/Order/Create" class="btn-nova" style="padding:6px 14px;font-size:12px">
+                    <i class="fa-solid fa-cart-plus"></i> Sipariş Ver
+                </a>
+            </div>
+            <div style="padding:8px 0">
+            @for (int i = 0; i < Model.FrequentProducts.Count; i++)
+            {
+                var fp = Model.FrequentProducts[i];
+                var rankColors = new[] { "#f59e0b", "#94a3b8", "#b45309", "#6366f1", "#06b6d4" };
+                var rankColor  = i < rankColors.Length ? rankColors[i] : "#6366f1";
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border-glass)">
+                    <div style="width:28px;height:28px;border-radius:50%;background:@rankColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">#@(i+1)</div>
+                    <div style="flex:1;min-width:0">
+                        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@fp.ProductName</div>
+                        <div style="font-size:11px;color:var(--text-muted)">
+                            <span class="badge-nova badge-cyan" style="font-size:10px">@fp.Category</span>
+                            &nbsp;@fp.SKU
+                        </div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0">
+                        <div style="font-size:13px;font-weight:700;color:var(--green)">@fp.UnitPrice.ToString("N2") ₺</div>
+                        <div style="font-size:11px;color:var(--text-muted)">@fp.TotalQty adet sipariş</div>
+                    </div>
+                </div>
+            }
+            @if (!Model.FrequentProducts.Any())
+            {
+                <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px">
+                    <i class="fa-solid fa-star" style="font-size:28px;opacity:0.2;margin-bottom:10px;display:block"></i>
+                    Sipariş geçmişiniz oluştukça favori ürünleriniz burada görünür.
+                </div>
+            }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+// ── Chart.js Ortak Ayarlar ───────────────────────────────────────────────────
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = 'Inter';
+
+// ── Aylık Satın Alma Trendi – Çizgi Grafik ───────────────────────────────────
+const dealerSalesCtx = document.getElementById('dealerSalesChart').getContext('2d');
+const dealerLabels   = @Html.Raw(monthLabelsJson);
+const dealerData     = @Html.Raw(purchaseDataJson);
+
+const grad = dealerSalesCtx.createLinearGradient(0, 0, 0, 240);
+grad.addColorStop(0, 'rgba(6,182,212,0.35)');
+grad.addColorStop(1, 'rgba(6,182,212,0)');
+
+new Chart(dealerSalesCtx, {
+    type: 'line',
+    data: {
+        labels: dealerLabels,
+        datasets: [{
+            label: 'Satın Alma (₺)',
+            data: dealerData,
+            borderColor: '#06b6d4',
+            backgroundColor: grad,
+            borderWidth: 2.5,
+            pointBackgroundColor: '#22d3ee',
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            tension: 0.42,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#0d1322',
+                borderColor: 'rgba(6,182,212,0.4)',
+                borderWidth: 1,
+                titleColor: '#e2e8f0',
+                bodyColor: '#22d3ee',
+                callbacks: {
+                    label: ctx => ' ' + Number(ctx.raw).toLocaleString('tr-TR') + ' ₺'
+                }
+            }
+        },
+        scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 11 } } },
+            y: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { font: { size: 11 }, callback: v => v.toLocaleString('tr-TR') + ' ₺' }
+            }
+        }
+    }
+});
+
+// ── Kategori Dağılımı – Donut Grafik ─────────────────────────────────────────
+const dealerCatCtx    = document.getElementById('dealerCategoryChart').getContext('2d');
+const dealerCatLabels = @Html.Raw(catLabelsJson);
+const dealerCatData   = @Html.Raw(catDataJson);
+
+if (dealerCatData.length > 0) {
+    new Chart(dealerCatCtx, {
+        type: 'doughnut',
+        data: {
+            labels: dealerCatLabels,
+            datasets: [{
+                data: dealerCatData,
+                backgroundColor: ['#7c3aed','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6'],
+                borderColor: '#f4f7fb',
+                borderWidth: 3,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 14, font: { size: 12 }, usePointStyle: true, pointStyleWidth: 8 }
+                },
+                tooltip: {
+                    backgroundColor: '#0d1322',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: ctx => ` ${ctx.label}: ${ctx.raw} adet`
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ── Kredi Çubuğu Animasyonu ───────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const bar = document.querySelector('.credit-bar-fill');
+    if (bar) {
+        const target = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => bar.style.width = target, 300);
+    }
+});
+</script>
+}
