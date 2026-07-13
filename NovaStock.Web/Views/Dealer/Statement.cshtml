@@ -1,0 +1,173 @@
+@model List<NovaStock.Web.ViewModels.DealerStatementItem>
+@{
+    ViewData["Title"] = "Cari Hesap Ekstresi";
+    var totalDebt   = (decimal)(ViewBag.TotalDebt   ?? 0m);
+    var creditLimit = (decimal)(ViewBag.CreditLimit ?? 0m);
+    var remaining   = (decimal)(ViewBag.Remaining   ?? 0m);
+    var tier        = (string)(ViewBag.Tier ?? "Bronze");
+    var usedPct     = creditLimit > 0 ? Math.Min((double)totalDebt / (double)creditLimit * 100, 100) : 0;
+    var barColor    = usedPct > 80 ? "var(--red)" : usedPct > 50 ? "var(--yellow)" : "var(--green)";
+    var tierColor   = tier == "Gold" ? "#f59e0b" : tier == "Silver" ? "#64748b" : "#b45309";
+}
+
+<!-- ── Page Header ─────────────────────────────────────────────────────────── -->
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-file-invoice-dollar" style="color:var(--accent-light);margin-right:10px"></i>Cari Hesap Ekstresi</h1>
+        <div class="breadcrumb-nova">@ViewBag.CompanyName · @ViewBag.DealerName</div>
+    </div>
+    <div style="display:flex;gap:10px">
+        <span class="badge-nova" style="background:@tierColor;color:#fff;font-size:13px;padding:8px 16px">
+            <i class="fa-solid fa-medal" style="margin-right:6px"></i>@tier Bayi
+        </span>
+        <a href="/" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Dashboard'a Dön</a>
+    </div>
+</div>
+
+<!-- ── Özet Kartlar ───────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="glass-card p-4">
+            <div class="stat-icon red" style="margin-bottom:10px"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="stat-value" style="font-size:22px;color:var(--red)">@totalDebt.ToString("N2") ₺</div>
+            <div class="stat-label">Toplam Borcum (Teslim Alınan)</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card p-4">
+            <div class="stat-icon green" style="margin-bottom:10px"><i class="fa-solid fa-credit-card"></i></div>
+            <div class="stat-value" style="font-size:22px;color:var(--green)">@remaining.ToString("N2") ₺</div>
+            <div class="stat-label">Kalan Kredi Limitim</div>
+            <div style="height:6px;background:rgba(0,0,0,0.06);border-radius:3px;overflow:hidden;margin-top:10px">
+                <div style="width:@usedPct.ToString("0")%;height:100%;background:@barColor;border-radius:3px;transition:width 1s"></div>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Toplam Limit: @creditLimit.ToString("N0") ₺</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card p-4">
+            <div class="stat-icon purple" style="margin-bottom:10px"><i class="fa-solid fa-receipt"></i></div>
+            <div class="stat-value" style="font-size:22px">@Model.Count</div>
+            <div class="stat-label">Toplam Sipariş Sayısı</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px">
+                Toplam Hacim: @Model.Sum(o => o.Total).ToString("N2") ₺
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Ekstre Tablosu ─────────────────────────────────────────────────────── -->
+<div class="glass-card">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:15px;font-weight:600">
+            <i class="fa-solid fa-table-list" style="color:var(--accent-light);margin-right:8px"></i>
+            Tüm Sipariş Hareketleri
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+            <span style="font-size:12px;color:var(--text-muted)">@Model.Count kayıt</span>
+        </div>
+    </div>
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Sipariş No</th>
+                    <th>Tutar</th>
+                    <th>Durum</th>
+                    <th>Bakiye Etkisi</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+            @{
+                decimal runningTotal = 0m;
+            }
+            @foreach (var o in Model)
+            {
+                var badgeClass = o.Status switch {
+                    "Pending"   => "badge-yellow",
+                    "Approved"  => "badge-cyan",
+                    "Shipped"   => "badge-purple",
+                    "Delivered" => "badge-green",
+                    "Cancelled" => "badge-red",
+                    _           => "badge-gray"
+                };
+                var statusTr = o.Status switch {
+                    "Pending"   => "Bekliyor",
+                    "Approved"  => "Onaylandı",
+                    "Shipped"   => "Kargoda",
+                    "Delivered" => "Teslim Alındı",
+                    "Cancelled" => "İptal",
+                    _           => o.Status
+                };
+                var affectsBalance = o.Status == "Delivered";
+                if (affectsBalance) runningTotal += o.Total;
+
+                <tr class="@(affectsBalance ? "" : "")">
+                    <td style="font-size:12px;color:var(--text-muted)">
+                        @o.CreatedAt.ToString("dd MMM yyyy", new System.Globalization.CultureInfo("tr-TR"))
+                        <div style="font-size:11px">@o.CreatedAt.ToString("HH:mm")</div>
+                    </td>
+                    <td style="font-family:monospace;font-size:13px;font-weight:600">@o.OrderNumber</td>
+                    <td style="font-weight:700;font-size:14px;@(affectsBalance ? "color:var(--red)" : "color:var(--text-secondary)")">
+                        @o.Total.ToString("N2") ₺
+                    </td>
+                    <td><span class="badge-nova @badgeClass">@statusTr</span></td>
+                    <td>
+                        @if (affectsBalance)
+                        {
+                            <span style="color:var(--red);font-size:12px;font-weight:600">
+                                <i class="fa-solid fa-arrow-up" style="font-size:10px"></i> +@o.Total.ToString("N0") ₺ Borç
+                            </span>
+                        }
+                        else if (o.Status == "Cancelled")
+                        {
+                            <span style="color:var(--text-muted);font-size:12px">—</span>
+                        }
+                        else
+                        {
+                            <span style="color:var(--text-muted);font-size:12px">Beklemede</span>
+                        }
+                    </td>
+                    <td>
+                        <a href="/Order/Detail/@o.Id" class="btn-nova-outline" style="padding:5px 10px;font-size:11px">
+                            <i class="fa-solid fa-eye"></i> Detay
+                        </a>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted)">
+                        <i class="fa-solid fa-file-invoice" style="font-size:32px;opacity:0.3;margin-bottom:12px;display:block"></i>
+                        Henüz sipariş geçmişiniz yok.
+                        <br>
+                        <a href="/Order/Create" class="btn-nova" style="margin-top:14px;display:inline-flex">
+                            <i class="fa-solid fa-plus"></i> İlk Siparişi Ver
+                        </a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div style="padding:16px 20px;border-top:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:var(--text-muted)">Teslim alınan siparişler bakiyenizi oluşturur.</span>
+            <div style="display:flex;gap:20px">
+                <div style="text-align:right">
+                    <div style="font-size:11px;color:var(--text-muted)">Toplam Borç</div>
+                    <div style="font-size:16px;font-weight:700;color:var(--red)">@totalDebt.ToString("N2") ₺</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:11px;color:var(--text-muted)">Kalan Limit</div>
+                    <div style="font-size:16px;font-weight:700;color:var(--green)">@remaining.ToString("N2") ₺</div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
