@@ -182,4 +182,46 @@ public class DealerController : Controller
 
         return View(vm);
     }
+    // ─── STATEMENT – Cari Hesap Ekstresi ────────────────────────────────────────
+    [Authorize(Roles = "Bayi")]
+    public async Task<IActionResult> Statement()
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser is null) return Challenge();
+
+        var dealerId = currentUser.Id;
+
+        var orders = await _context.Orders
+            .Where(o => o.DealerId == dealerId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => new DealerStatementItem
+            {
+                Id          = o.Id,
+                OrderNumber = o.OrderNumber,
+                Total       = o.Total,
+                Status      = o.Status.ToString(),
+                CreatedAt   = o.CreatedAt
+            })
+            .ToListAsync();
+
+        var totalDebt = await _context.Orders
+            .Where(o => o.DealerId == dealerId && o.Status == OrderStatus.Delivered)
+            .SumAsync(o => (decimal?)o.Total) ?? 0m;
+
+        var creditLimit = currentUser.Tier switch
+        {
+            DealerTier.Gold   => 500_000m,
+            DealerTier.Silver => 200_000m,
+            _                 => 50_000m
+        };
+
+        ViewBag.DealerName    = currentUser.FullName;
+        ViewBag.CompanyName   = currentUser.CompanyName;
+        ViewBag.Tier          = currentUser.Tier.ToString();
+        ViewBag.TotalDebt     = totalDebt;
+        ViewBag.CreditLimit   = creditLimit;
+        ViewBag.Remaining     = creditLimit - totalDebt;
+
+        return View(orders);
+    }
 }
