@@ -1,11 +1,23 @@
 @model NovaStock.Web.ViewModels.DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
-    var monthLabelsJson     = System.Text.Json.JsonSerializer.Serialize(Model.MonthLabels);
-    var monthlySalesJson    = System.Text.Json.JsonSerializer.Serialize(Model.MonthlySalesData);
-    var categoryLabelsJson  = System.Text.Json.JsonSerializer.Serialize(Model.CategoryLabels);
-    var categorySalesJson   = System.Text.Json.JsonSerializer.Serialize(Model.CategorySalesData);
+    // Razor değişkenleri her iki dal için burada hazırlanır
+    // (Bayi dali partial içinden kendi değişkenlerini üretir)
+    var monthLabelsJson    = Model.MonthLabels    != null ? System.Text.Json.JsonSerializer.Serialize(Model.MonthLabels)    : "[]";
+    var monthlySalesJson   = Model.MonthlySalesData != null ? System.Text.Json.JsonSerializer.Serialize(Model.MonthlySalesData) : "[]";
+    var categoryLabelsJson = Model.CategoryLabels  != null ? System.Text.Json.JsonSerializer.Serialize(Model.CategoryLabels)  : "[]";
+    var categorySalesJson  = Model.CategorySalesData != null ? System.Text.Json.JsonSerializer.Serialize(Model.CategorySalesData) : "[]";
 }
+
+@if (User.IsInRole("Bayi") && Model.DealerDashboard != null)
+{
+    @* ── BAYI PORTALINA ÖZEL DASHBOARD ───────────────────────────────────── *@
+    @await Html.PartialAsync("_DealerDashboard", Model.DealerDashboard)
+}
+else
+{
+    @* ── ADMİN DASHBOARD ─────────────────────────────────────────────────── *@
+
 
 <!-- ── Stat Cards ─────────────────────────────────────────────────────────── -->
 <div class="page-header">
@@ -364,3 +376,6 @@ new Chart(catCtx, {
 });
 </script>
 }
+
+} @* ── else (Admin Dashboard kapanış) ─────────────────────────────────── *@
+
