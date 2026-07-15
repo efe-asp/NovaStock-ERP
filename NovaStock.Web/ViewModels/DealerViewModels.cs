@@ -59,7 +59,9 @@ public class DealerEditViewModel
     public bool IsActive { get; set; }
 }
 
-// ─── Cari Hesap Ekstresi ─────────────────────────────────────────────────────
+// ─── Cari Hesap Ekstresi (eski uyumluluk) ──────────────────────────────────
+// Yeni ekran StatementViewModel (SupportViewModels.cs) kullanıyor.
+// Bu sınıf geriye dönük uyumluluk için burada tutuluyor.
 public class DealerStatementItem
 {
     public int      Id          { get; set; }
