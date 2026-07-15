@@ -20,6 +20,12 @@
         <a href="/Order/DownloadInvoice/@Model.Id" class="btn-nova-outline">
             <i class="fa-solid fa-file-pdf"></i> Fatura İndir
         </a>
+        @if (User.IsInRole("Dealer") || User.IsInRole("DealerPurchase"))
+        {
+            <a href="/Order/GenerateQuote?orderId=@Model.Id" class="btn-nova-outline" style="border-color:var(--cyan);color:var(--cyan)">
+                <i class="fa-solid fa-file-signature"></i> Proforma Teklif
+            </a>
+        }
         @if (User.IsInRole("Admin") && Model.Status == NovaStock.Web.Models.OrderStatus.Pending)
         {
             <form method="post" action="/Order/Approve/@Model.Id"
