@@ -104,8 +104,8 @@ static async Task SeedDatabaseAsync(WebApplication app)
     // Migration uygula
     await context.Database.MigrateAsync();
 
-    // Rolleri oluştur
-    foreach (var role in new[] { "Admin", "Dealer" })
+    // Rolleri oluştur (Admin, Dealer, alt kullanıcı rolleri)
+    foreach (var role in new[] { "Admin", "Dealer", "DealerPurchase", "DealerFinance" })
     {
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole(role));
