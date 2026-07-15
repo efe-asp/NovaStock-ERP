@@ -39,6 +39,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<PurchaseOrder>     PurchaseOrders    { get; set; }
     public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
     public DbSet<Notification>      Notifications     { get; set; }
+    public DbSet<LedgerEntry>       LedgerEntries     { get; set; }
+    public DbSet<SupportTicket>     SupportTickets    { get; set; }
+    public DbSet<TicketMessage>     TicketMessages    { get; set; }
 
     // ─── Model Yapılandırması ───────────────────────────────────────────────────
     protected override void OnModelCreating(ModelBuilder builder)
@@ -58,6 +61,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<PurchaseOrder>()    .HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<PurchaseOrderItem>().HasQueryFilter(e => !e.IsDeleted);
         builder.Entity<Notification>()     .HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<LedgerEntry>()        .HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<SupportTicket>()      .HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<TicketMessage>()      .HasQueryFilter(e => !e.IsDeleted);
 
         // ProductWarehouse composite index
         builder.Entity<ProductWarehouse>()
@@ -69,6 +75,62 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(o => o.Dealer)
             .WithMany(u => u.Orders)
             .HasForeignKey(o => o.DealerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // LedgerEntry – ApplicationUser ilişkisi
+        builder.Entity<LedgerEntry>()
+            .HasOne(l => l.Dealer)
+            .WithMany(u => u.LedgerEntries)
+            .HasForeignKey(l => l.DealerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // LedgerEntry – Order ilişkisi (opsiyonel)
+        builder.Entity<LedgerEntry>()
+            .HasOne(l => l.RelatedOrder)
+            .WithMany()
+            .HasForeignKey(l => l.RelatedOrderId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // SupportTicket – Dealer ilişkisi
+        builder.Entity<SupportTicket>()
+            .HasOne(t => t.Dealer)
+            .WithMany(u => u.SupportTickets)
+            .HasForeignKey(t => t.DealerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // SupportTicket – AssignedTo (admin) ilişkisi
+        builder.Entity<SupportTicket>()
+            .HasOne(t => t.AssignedTo)
+            .WithMany()
+            .HasForeignKey(t => t.AssignedToId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // SupportTicket – RelatedOrder ilişkisi (opsiyonel)
+        builder.Entity<SupportTicket>()
+            .HasOne(t => t.RelatedOrder)
+            .WithMany()
+            .HasForeignKey(t => t.RelatedOrderId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // TicketMessage – SupportTicket ilişkisi
+        builder.Entity<TicketMessage>()
+            .HasOne(m => m.SupportTicket)
+            .WithMany(t => t.Messages)
+            .HasForeignKey(m => m.SupportTicketId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // TicketMessage – Sender ilişkisi
+        builder.Entity<TicketMessage>()
+            .HasOne(m => m.Sender)
+            .WithMany()
+            .HasForeignKey(m => m.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ApplicationUser – Sub-User (self-referential) ilişkisi
+        builder.Entity<ApplicationUser>()
+            .HasOne(u => u.ParentDealer)
+            .WithMany(u => u.SubUsers)
+            .HasForeignKey(u => u.ParentDealerId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Seed başlangıç kategorileri

@@ -521,14 +521,24 @@
                 <a href="/Dealer/Statement" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dealer" && ViewContext.RouteData.Values["action"]?.ToString() == "Statement" ? "active" : "")">
                     <i class="fa-solid fa-file-invoice-dollar"></i> Cari Hesap Ekstresi
                 </a>
+                <a href="/Product/ExportPriceList" class="nav-item-link">
+                    <i class="fa-solid fa-tags"></i> Özel Fiyat Listesi (Excel)
+                </a>
+
+                <div class="nav-section-label" style="margin-top:10px;">Toplu İşlemler</div>
+                <a href="/Order?BulkMode=true" class="nav-item-link">
+                    <i class="fa-solid fa-file-excel"></i> Toplu Excel Sipariş
+                </a>
                 <a href="/Order?Frequent=true" class="nav-item-link">
                     <i class="fa-solid fa-star"></i> Sık Satın Aldıklarım
                 </a>
 
-                <div class="nav-section-label" style="margin-top:10px;">Destek Sistemi</div>
-                <a href="/Support" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Support" ? "active" : "")" style="position:relative">
+                <div class="nav-section-label" style="margin-top:10px;">Destek & Ekip</div>
+                <a href="/Support" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Support" ? "active" : "")">
                     <i class="fa-solid fa-headset"></i> Destek Talepleri
-                    <span style="margin-left:auto;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px">Yakında</span>
+                </a>
+                <a href="/Dealer/TeamManagement" class="nav-item-link @(ViewContext.RouteData.Values["action"]?.ToString() == "TeamManagement" ? "active" : "")">
+                    <i class="fa-solid fa-users-gear"></i> Ekip Yönetimi
                 </a>
             }
 

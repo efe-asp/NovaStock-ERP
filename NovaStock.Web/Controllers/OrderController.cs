@@ -8,6 +8,7 @@ using NovaStock.Web.Hubs;
 using NovaStock.Web.Models;
 using NovaStock.Web.Extensions;
 using NovaStock.Web.Services;
+using NovaStock.Web.ViewModels;
 
 namespace NovaStock.Web.Controllers;
 
@@ -21,6 +22,7 @@ public class OrderController : Controller
     private readonly ApplicationDbContext         _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly PdfService                   _pdf;
+    private readonly ExcelService                 _excel;
     private readonly PromotionEngine              _promotionEngine;
     private readonly IHubContext<NotificationHub> _hub;
     private readonly ILogger<OrderController>     _logger;
@@ -29,6 +31,7 @@ public class OrderController : Controller
         ApplicationDbContext          context,
         UserManager<ApplicationUser>  userManager,
         PdfService                    pdf,
+        ExcelService                  excel,
         PromotionEngine               promotionEngine,
         IHubContext<NotificationHub>  hub,
         ILogger<OrderController>      logger)
@@ -36,6 +39,7 @@ public class OrderController : Controller
         _context         = context;
         _userManager     = userManager;
         _pdf             = pdf;
+        _excel           = excel;
         _promotionEngine = promotionEngine;
         _hub             = hub;
         _logger          = logger;
@@ -317,4 +321,115 @@ public class OrderController : Controller
         return File(pdfBytes, "application/pdf",
             $"Fatura_{order.OrderNumber}_{DateTime.Now:yyyyMMdd}.pdf");
     }
+
+    // ─── TOPLU EXCEL SİPARİŞ ────────────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Şablon Excel dosyasını indirir (SKU + Adet kolonları).
+    /// </summary>
+    [Authorize(Roles = "Dealer,DealerPurchase")]
+    public IActionResult BulkOrderTemplate()
+    {
+        var bytes = _excel.GenerateBulkOrderTemplate();
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "NovaStock_TopluSiparis_Sablon.xlsx");
+    }
+
+    /// <summary>
+    /// Bayinin yüklediği Excel'i okur, stok kontrolu yapar, sonucu gösterir.
+    /// </summary>
+    [HttpPost, ValidateAntiForgeryToken]
+    [Authorize(Roles = "Dealer,DealerPurchase")]
+    public async Task<IActionResult> BulkOrderProcess(IFormFile? excelFile)
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser is null) return Challenge();
+
+        if (excelFile is null || excelFile.Length == 0)
+        {
+            TempData["Error"] = "Lütfen geçerli bir Excel dosyası yükleyin.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Excel'i parse et
+        using var stream = excelFile.OpenReadStream();
+        var (rows, excelErrors) = _excel.ParseBulkOrderExcel(stream);
+
+        var resultItems = new List<BulkOrderResultItem>();
+
+        foreach (var row in rows)
+        {
+            var product = await _context.Products
+                .Where(p => p.SKU == row.SKU && p.IsActive)
+                .FirstOrDefaultAsync();
+
+            if (product is null)
+            {
+                excelErrors.Add($"Satır {row.RowNumber}: '{row.SKU}' SKU kodu sistemde bulunamadı.");
+                continue;
+            }
+
+            // Tier indirimli fiyat hesapla
+            var dealerId = currentUser.ParentDealerId ?? currentUser.Id;
+            var dealer   = await _userManager.FindByIdAsync(dealerId) ?? currentUser;
+            var discount = dealer.Tier switch
+            {
+                DealerTier.Gold   => 0.15m,
+                DealerTier.Silver => 0.08m,
+                _                 => 0m
+            };
+            var unitPrice = Math.Round(product.BasePrice * (1 - discount), 2);
+
+            resultItems.Add(new BulkOrderResultItem
+            {
+                SKU         = row.SKU,
+                ProductName = product.Name,
+                Requested   = row.Quantity,
+                Available   = product.StockCount,
+                UnitPrice   = unitPrice
+            });
+        }
+
+        var vm = new BulkOrderResultViewModel
+        {
+            Items       = resultItems,
+            ExcelErrors = excelErrors
+        };
+
+        if (!vm.HasErrors && vm.CanProceed)
+        {
+            // Geçerli satırları sepete ekle (session bazlı sepet veya direk sipariş oluştur)
+            // Demo: Sipariş oluşturularak sipariş listesine yönlendir
+            TempData["BulkSuccess"] = $"{vm.ValidCount} ürün için sipariş oluşturmaya hazır. Lütfen gözden geçirip onaylayın.³";
+        }
+
+        return View("BulkOrderResult", vm);
+    }
+
+    // ─── PROFORMA FATURA (Teklif Formu) ───────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Bayi kendi müşterisine kâr marjlı proforma fatura üretir.
+    /// Sipariş ürünlerinin üzerine belirtilen marj eklenerek PDF oluşturulur.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Dealer,DealerPurchase")]
+    public async Task<IActionResult> GenerateQuote(int orderId, decimal margin = 10)
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser is null) return Challenge();
+
+        var dealerId = currentUser.ParentDealerId ?? currentUser.Id;
+        var dealer   = await _userManager.FindByIdAsync(dealerId) ?? currentUser;
+
+        var order = await _context.Orders
+            .Include(o => o.Items).ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(o => o.Id == orderId && o.DealerId == dealerId);
+
+        if (order is null) return NotFound();
+
+        var pdf      = _pdf.GenerateProformaInvoice(order, margin, dealer.CompanyName);
+        var fileName = $"ProformaFatura_{dealer.CompanyName.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.pdf";
+
+        return File(pdf, "application/pdf", fileName);
+    }
 }
+
