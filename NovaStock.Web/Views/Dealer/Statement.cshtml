@@ -1,152 +1,283 @@
-@model List<NovaStock.Web.ViewModels.DealerStatementItem>
+@model NovaStock.Web.ViewModels.StatementViewModel
 @{
     ViewData["Title"] = "Cari Hesap Ekstresi";
-    var totalDebt   = (decimal)(ViewBag.TotalDebt   ?? 0m);
-    var creditLimit = (decimal)(ViewBag.CreditLimit ?? 0m);
-    var remaining   = (decimal)(ViewBag.Remaining   ?? 0m);
-    var tier        = (string)(ViewBag.Tier ?? "Bronze");
-    var usedPct     = creditLimit > 0 ? Math.Min((double)totalDebt / (double)creditLimit * 100, 100) : 0;
-    var barColor    = usedPct > 80 ? "var(--red)" : usedPct > 50 ? "var(--yellow)" : "var(--green)";
-    var tierColor   = tier == "Gold" ? "#f59e0b" : tier == "Silver" ? "#64748b" : "#b45309";
+    var isDebt      = Model.NetBalance > 0;
+    var tierColor   = Model.Tier == "Gold" ? "#f59e0b" : Model.Tier == "Silver" ? "#64748b" : "#b45309";
+    var barColor    = Model.UsedLimitPct > 80 ? "var(--red)" : Model.UsedLimitPct > 50 ? "var(--yellow)" : "var(--green)";
+    var tr          = new System.Globalization.CultureInfo("tr-TR");
 }
 
-<!-- ── Page Header ─────────────────────────────────────────────────────────── -->
+@section Styles {
+<style>
+/* ── Cari Ekstre Premium Stiller ────────────────────────────────── */
+.ledger-kpi {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    position: relative; overflow: hidden;
+    transition: all var(--transition);
+}
+.ledger-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+.ledger-kpi-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 14px;
+}
+.ledger-kpi-value { font-size: 24px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+.ledger-kpi-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .8px; }
+
+.ledger-table th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; }
+.ledger-debit  { color: var(--red)   !important; font-weight: 700; }
+.ledger-credit { color: var(--green) !important; font-weight: 700; }
+.ledger-row-overdue { background: rgba(239,68,68,0.05) !important; }
+
+/* Sanal POS Modal */
+.pos-modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 1050;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+}
+.pos-modal-backdrop.show { display: flex; }
+.pos-modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px; padding: 0;
+    width: 100%; max-width: 480px;
+    animation: slideUp .3s ease;
+    overflow: hidden;
+}
+@@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.pos-modal-header {
+    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    padding: 24px 28px;
+    color: #fff;
+}
+.pos-modal-body { padding: 28px; }
+.card-input-wrap {
+    position: relative; margin-bottom: 16px;
+}
+.card-input-wrap input {
+    width: 100%; padding: 12px 14px 12px 44px;
+    background: var(--bg-body); border: 1.5px solid var(--border-glass);
+    border-radius: 10px; color: var(--text-primary); font-size: 14px;
+    transition: border-color .2s;
+}
+.card-input-wrap input:focus { outline: none; border-color: var(--accent); }
+.card-input-wrap .card-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 16px;
+}
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.btn-pay {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    color: #fff; border: none; border-radius: 12px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: opacity .2s, transform .15s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.btn-pay:hover { opacity: .9; transform: translateY(-1px); }
+
+/* Kredi bar */
+.credit-bar-wrap { height: 8px; background: rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; margin-top: 12px; }
+.credit-bar-fill { height: 100%; border-radius: 4px; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+</style>
+}
+
+<!-- ── Page Header ──────────────────────────────────────────────────────────── -->
 <div class="page-header">
     <div>
         <h1><i class="fa-solid fa-file-invoice-dollar" style="color:var(--accent-light);margin-right:10px"></i>Cari Hesap Ekstresi</h1>
-        <div class="breadcrumb-nova">@ViewBag.CompanyName · @ViewBag.DealerName</div>
+        <div class="breadcrumb-nova">@Model.CompanyName · @Model.DealerName</div>
     </div>
-    <div style="display:flex;gap:10px">
-        <span class="badge-nova" style="background:@tierColor;color:#fff;font-size:13px;padding:8px 16px">
-            <i class="fa-solid fa-medal" style="margin-right:6px"></i>@tier Bayi
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <span class="badge-nova" style="background:@tierColor;color:#fff;font-size:12px;padding:8px 16px">
+            <i class="fa-solid fa-medal" style="margin-right:6px"></i>@Model.Tier Bayi
         </span>
-        <a href="/" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Dashboard'a Dön</a>
+        <button id="btnPayModal" class="btn-nova" style="background:linear-gradient(135deg,#7c3aed,#06b6d4)">
+            <i class="fa-solid fa-credit-card"></i> Kredi Kartı ile Öde
+        </button>
+        <a href="/Dealer/ExportStatementPdf" class="btn-nova-outline" id="btnExportPdf">
+            <i class="fa-solid fa-file-pdf"></i> PDF İndir
+        </a>
+        <a href="/Dealer/ExportStatementExcel" class="btn-nova-outline" id="btnExportExcel">
+            <i class="fa-solid fa-file-excel"></i> Excel'e Aktar
+        </a>
+        <a href="/" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
     </div>
 </div>
 
-<!-- ── Özet Kartlar ───────────────────────────────────────────────────────── -->
+<!-- ── KPI Kartlar ──────────────────────────────────────────────────────────── -->
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="glass-card p-4">
-            <div class="stat-icon red" style="margin-bottom:10px"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <div class="stat-value" style="font-size:22px;color:var(--red)">@totalDebt.ToString("N2") ₺</div>
-            <div class="stat-label">Toplam Borcum (Teslim Alınan)</div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="glass-card p-4">
-            <div class="stat-icon green" style="margin-bottom:10px"><i class="fa-solid fa-credit-card"></i></div>
-            <div class="stat-value" style="font-size:22px;color:var(--green)">@remaining.ToString("N2") ₺</div>
-            <div class="stat-label">Kalan Kredi Limitim</div>
-            <div style="height:6px;background:rgba(0,0,0,0.06);border-radius:3px;overflow:hidden;margin-top:10px">
-                <div style="width:@usedPct.ToString("0")%;height:100%;background:@barColor;border-radius:3px;transition:width 1s"></div>
+
+    <!-- Güncel Bakiye -->
+    <div class="col-xl-3 col-md-6">
+        <div class="ledger-kpi" style="border-top:3px solid @(isDebt ? "var(--red)" : "var(--green)")">
+            <div class="ledger-kpi-icon" style="background:@(isDebt ? "rgba(239,68,68,.12)" : "rgba(16,185,129,.12)");color:@(isDebt ? "var(--red)" : "var(--green)")">
+                <i class="fa-solid fa-scale-balanced"></i>
             </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Toplam Limit: @creditLimit.ToString("N0") ₺</div>
+            <div class="ledger-kpi-value" style="color:@(isDebt ? "var(--red)" : "var(--green)")">
+                @(isDebt ? "" : "+")@Model.NetBalance.ToString("N2", tr) ₺
+            </div>
+            <div class="ledger-kpi-label">@(isDebt ? "Güncel Borç" : "Alacak Bakiyesi")</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="glass-card p-4">
-            <div class="stat-icon purple" style="margin-bottom:10px"><i class="fa-solid fa-receipt"></i></div>
-            <div class="stat-value" style="font-size:22px">@Model.Count</div>
-            <div class="stat-label">Toplam Sipariş Sayısı</div>
+
+    <!-- Kullanılabilir Limit -->
+    <div class="col-xl-3 col-md-6">
+        <div class="ledger-kpi" style="border-top:3px solid var(--green)">
+            <div class="ledger-kpi-icon" style="background:rgba(16,185,129,.12);color:var(--green)">
+                <i class="fa-solid fa-gauge-high"></i>
+            </div>
+            @{
+                var remaining = Model.CreditLimit - Model.NetBalance;
+            }
+            <div class="ledger-kpi-value" style="color:var(--green)">@remaining.ToString("N2", tr) ₺</div>
+            <div class="ledger-kpi-label">Kullanılabilir Limit</div>
+            <div class="credit-bar-wrap">
+                <div class="credit-bar-fill" id="creditBar" style="width:0%;background:@barColor"></div>
+            </div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:6px">
-                Toplam Hacim: @Model.Sum(o => o.Total).ToString("N2") ₺
+                Toplam Limit: @Model.CreditLimit.ToString("N0", tr) ₺ &nbsp;·&nbsp; Kullanım: @Model.UsedLimitPct.ToString("0", tr)%
+            </div>
+        </div>
+    </div>
+
+    <!-- Vadesi Geçen Borç -->
+    <div class="col-xl-3 col-md-6">
+        <div class="ledger-kpi" style="border-top:3px solid @(Model.OverdueDebt > 0 ? "var(--red)" : "var(--green)")">
+            <div class="ledger-kpi-icon" style="background:@(Model.OverdueDebt > 0 ? "rgba(239,68,68,.12)" : "rgba(16,185,129,.12)");color:@(Model.OverdueDebt > 0 ? "var(--red)" : "var(--green)")">
+                <i class="fa-solid fa-calendar-xmark"></i>
+            </div>
+            <div class="ledger-kpi-value" style="color:@(Model.OverdueDebt > 0 ? "var(--red)" : "var(--green)")">
+                @Model.OverdueDebt.ToString("N2", tr) ₺
+            </div>
+            <div class="ledger-kpi-label">Vadesi Geçen Borç</div>
+            @if (Model.OverdueDebt > 0)
+            {
+                <div style="font-size:11px;color:var(--red);margin-top:6px">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Acil ödeme gerekiyor
+                </div>
+            }
+            else
+            {
+                <div style="font-size:11px;color:var(--green);margin-top:6px">
+                    <i class="fa-solid fa-circle-check"></i> Tüm ödemeler güncel
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Toplam Hareketler -->
+    <div class="col-xl-3 col-md-6">
+        <div class="ledger-kpi" style="border-top:3px solid var(--accent)">
+            <div class="ledger-kpi-icon" style="background:rgba(99,102,241,.12);color:var(--accent)">
+                <i class="fa-solid fa-table-list"></i>
+            </div>
+            <div class="ledger-kpi-value" style="color:var(--accent)">@Model.Entries.Count</div>
+            <div class="ledger-kpi-label">Toplam Hareket</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px">
+                Toplam Borç: @Model.TotalDebt.ToString("N0", tr) ₺ &nbsp;/&nbsp; Alacak: @Model.TotalCredit.ToString("N0", tr) ₺
             </div>
         </div>
     </div>
 </div>
 
-<!-- ── Ekstre Tablosu ─────────────────────────────────────────────────────── -->
+<!-- ── Ledger Tablosu ───────────────────────────────────────────────────────── -->
 <div class="glass-card">
-    <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div style="font-size:15px;font-weight:600">
-            <i class="fa-solid fa-table-list" style="color:var(--accent-light);margin-right:8px"></i>
-            Tüm Sipariş Hareketleri
+            <i class="fa-solid fa-book" style="color:var(--accent-light);margin-right:8px"></i>
+            Cari Hareket Defteri
         </div>
         <div style="display:flex;gap:10px;align-items:center">
-            <span style="font-size:12px;color:var(--text-muted)">@Model.Count kayıt</span>
+            <span style="font-size:12px;color:var(--text-muted)">@Model.Entries.Count kayıt</span>
         </div>
     </div>
+
     <div style="overflow-x:auto">
-        <table class="nova-table">
+        <table class="nova-table ledger-table">
             <thead>
                 <tr>
                     <th>Tarih</th>
-                    <th>Sipariş No</th>
-                    <th>Tutar</th>
-                    <th>Durum</th>
-                    <th>Bakiye Etkisi</th>
-                    <th>İşlem</th>
+                    <th>İşlem Türü</th>
+                    <th>Evrak No</th>
+                    <th style="text-align:right">Borç</th>
+                    <th style="text-align:right">Alacak</th>
+                    <th style="text-align:right">Kalan Bakiye</th>
+                    <th>Açıklama</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
-            @{
-                decimal runningTotal = 0m;
-            }
-            @foreach (var o in Model)
+            @if (!Model.Entries.Any())
             {
-                var badgeClass = o.Status switch {
-                    "Pending"   => "badge-yellow",
-                    "Approved"  => "badge-cyan",
-                    "Shipped"   => "badge-purple",
-                    "Delivered" => "badge-green",
-                    "Cancelled" => "badge-red",
-                    _           => "badge-gray"
-                };
-                var statusTr = o.Status switch {
-                    "Pending"   => "Bekliyor",
-                    "Approved"  => "Onaylandı",
-                    "Shipped"   => "Kargoda",
-                    "Delivered" => "Teslim Alındı",
-                    "Cancelled" => "İptal",
-                    _           => o.Status
-                };
-                var affectsBalance = o.Status == "Delivered";
-                if (affectsBalance) runningTotal += o.Total;
-
-                <tr class="@(affectsBalance ? "" : "")">
-                    <td style="font-size:12px;color:var(--text-muted)">
-                        @o.CreatedAt.ToString("dd MMM yyyy", new System.Globalization.CultureInfo("tr-TR"))
-                        <div style="font-size:11px">@o.CreatedAt.ToString("HH:mm")</div>
-                    </td>
-                    <td style="font-family:monospace;font-size:13px;font-weight:600">@o.OrderNumber</td>
-                    <td style="font-weight:700;font-size:14px;@(affectsBalance ? "color:var(--red)" : "color:var(--text-secondary)")">
-                        @o.Total.ToString("N2") ₺
-                    </td>
-                    <td><span class="badge-nova @badgeClass">@statusTr</span></td>
-                    <td>
-                        @if (affectsBalance)
-                        {
-                            <span style="color:var(--red);font-size:12px;font-weight:600">
-                                <i class="fa-solid fa-arrow-up" style="font-size:10px"></i> +@o.Total.ToString("N0") ₺ Borç
-                            </span>
-                        }
-                        else if (o.Status == "Cancelled")
-                        {
-                            <span style="color:var(--text-muted);font-size:12px">—</span>
-                        }
-                        else
-                        {
-                            <span style="color:var(--text-muted);font-size:12px">Beklemede</span>
-                        }
-                    </td>
-                    <td>
-                        <a href="/Order/Detail/@o.Id" class="btn-nova-outline" style="padding:5px 10px;font-size:11px">
-                            <i class="fa-solid fa-eye"></i> Detay
-                        </a>
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:60px;color:var(--text-muted)">
+                        <i class="fa-solid fa-book-open" style="font-size:36px;opacity:.25;display:block;margin-bottom:14px"></i>
+                        Henüz cari hesap hareketi bulunmuyor.
                     </td>
                 </tr>
             }
-            @if (!Model.Any())
+            @foreach (var entry in Model.Entries)
             {
-                <tr>
-                    <td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted)">
-                        <i class="fa-solid fa-file-invoice" style="font-size:32px;opacity:0.3;margin-bottom:12px;display:block"></i>
-                        Henüz sipariş geçmişiniz yok.
-                        <br>
-                        <a href="/Order/Create" class="btn-nova" style="margin-top:14px;display:inline-flex">
-                            <i class="fa-solid fa-plus"></i> İlk Siparişi Ver
-                        </a>
+                <tr class="@(entry.IsOverdue ? "ledger-row-overdue" : "")">
+                    <td>
+                        <div style="font-size:12px;font-weight:600">@entry.TransactionDate.ToString("dd MMM yyyy", tr)</div>
+                        <div style="font-size:11px;color:var(--text-muted)">@entry.TransactionDate.ToString("HH:mm")</div>
+                        @if (entry.IsOverdue)
+                        {
+                            <div style="font-size:10px;color:var(--red);margin-top:2px"><i class="fa-solid fa-clock"></i> VADESİ GEÇTİ</div>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge-nova @entry.TransactionTypeBadge">
+                            <i class="fa-solid @entry.TransactionTypeIcon" style="margin-right:5px;font-size:10px"></i>
+                            @entry.TransactionTypeLabel
+                        </span>
+                    </td>
+                    <td style="font-family:monospace;font-size:12px;font-weight:600;color:var(--text-muted)">
+                        @entry.DocumentNumber
+                    </td>
+                    <td style="text-align:right">
+                        @if (entry.Debit > 0)
+                        {
+                            <span class="ledger-debit">@entry.Debit.ToString("N2", tr) ₺</span>
+                        }
+                        else
+                        {
+                            <span style="color:var(--text-muted);font-size:13px">—</span>
+                        }
+                    </td>
+                    <td style="text-align:right">
+                        @if (entry.Credit > 0)
+                        {
+                            <span class="ledger-credit">@entry.Credit.ToString("N2", tr) ₺</span>
+                        }
+                        else
+                        {
+                            <span style="color:var(--text-muted);font-size:13px">—</span>
+                        }
+                    </td>
+                    <td style="text-align:right">
+                        <span style="font-weight:700;font-size:13px;color:@(entry.RunningBalance > 0 ? "var(--red)" : "var(--green)")">
+                            @entry.RunningBalance.ToString("N2", tr) ₺
+                        </span>
+                    </td>
+                    <td style="font-size:12px;color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                        @entry.Description
+                    </td>
+                    <td>
+                        @if (entry.RelatedOrderId.HasValue)
+                        {
+                            <a href="/Order/Detail/@entry.RelatedOrderId" class="btn-nova-outline" style="padding:4px 8px;font-size:11px">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                        }
                     </td>
                 </tr>
             }
@@ -154,20 +285,124 @@
         </table>
     </div>
 
-    @if (Model.Any())
+    <!-- Tablo Footer -->
+    @if (Model.Entries.Any())
     {
-        <div style="padding:16px 20px;border-top:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:13px;color:var(--text-muted)">Teslim alınan siparişler bakiyenizi oluşturur.</span>
-            <div style="display:flex;gap:20px">
+        <div style="padding:16px 20px;border-top:1px solid var(--border-glass);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <span style="font-size:12px;color:var(--text-muted)">
+                <i class="fa-solid fa-circle-info" style="margin-right:4px"></i>
+                Teslim alınan siparişler Borç olarak kaydedilir. Ödemeler Alacak olarak düşer.
+            </span>
+            <div style="display:flex;gap:24px">
                 <div style="text-align:right">
                     <div style="font-size:11px;color:var(--text-muted)">Toplam Borç</div>
-                    <div style="font-size:16px;font-weight:700;color:var(--red)">@totalDebt.ToString("N2") ₺</div>
+                    <div style="font-size:15px;font-weight:700;color:var(--red)">@Model.TotalDebt.ToString("N2", tr) ₺</div>
                 </div>
                 <div style="text-align:right">
-                    <div style="font-size:11px;color:var(--text-muted)">Kalan Limit</div>
-                    <div style="font-size:16px;font-weight:700;color:var(--green)">@remaining.ToString("N2") ₺</div>
+                    <div style="font-size:11px;color:var(--text-muted)">Toplam Alacak</div>
+                    <div style="font-size:15px;font-weight:700;color:var(--green)">@Model.TotalCredit.ToString("N2", tr) ₺</div>
+                </div>
+                <div style="text-align:right;padding-left:20px;border-left:2px solid var(--border-glass)">
+                    <div style="font-size:11px;color:var(--text-muted)">Net Bakiye</div>
+                    <div style="font-size:18px;font-weight:800;color:@(Model.NetBalance > 0 ? "var(--red)" : "var(--green)")">
+                        @Model.NetBalance.ToString("N2", tr) ₺
+                    </div>
                 </div>
             </div>
         </div>
     }
 </div>
+
+<!-- ── Sanal POS Modal ──────────────────────────────────────────────────────── -->
+<div class="pos-modal-backdrop" id="posModal">
+    <div class="pos-modal">
+        <div class="pos-modal-header">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+                <div style="width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <div style="font-size:18px;font-weight:700">Güvenli Ödeme</div>
+                    <div style="font-size:12px;opacity:.8">3D Secure korumalı · SSL şifreli</div>
+                </div>
+            </div>
+            <div style="font-size:13px;opacity:.8">Borçlu Tutar:</div>
+            <div style="font-size:28px;font-weight:800">@Model.NetBalance.ToString("N2", tr) ₺</div>
+        </div>
+
+        <div class="pos-modal-body">
+            <form id="posForm" asp-action="PayWithCard" asp-controller="Dealer" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="amount" value="@Model.NetBalance" />
+
+                <div class="card-input-wrap">
+                    <span class="card-icon"><i class="fa-solid fa-user"></i></span>
+                    <input type="text" name="cardHolder" id="cardHolder" placeholder="Kart Üzerindeki İsim" required autocomplete="cc-name" />
+                </div>
+                <div class="card-input-wrap">
+                    <span class="card-icon"><i class="fa-solid fa-credit-card"></i></span>
+                    <input type="text" name="cardNumber" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required autocomplete="cc-number" />
+                </div>
+                <div class="card-row">
+                    <div class="card-input-wrap" style="margin-bottom:0">
+                        <span class="card-icon"><i class="fa-regular fa-calendar"></i></span>
+                        <input type="text" name="expiry" id="expiry" placeholder="AA/YY" maxlength="5" required autocomplete="cc-exp" />
+                    </div>
+                    <div class="card-input-wrap" style="margin-bottom:0">
+                        <span class="card-icon"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" name="cvv" id="cvv" placeholder="CVV" maxlength="3" required autocomplete="cc-csc" />
+                    </div>
+                </div>
+                <div style="margin-top:20px">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:12px;color:var(--text-muted)">
+                        <i class="fa-solid fa-lock" style="color:var(--green)"></i>
+                        İşleminiz 256-bit SSL ile korunmaktadır. Kart bilgileriniz saklanmaz.
+                    </div>
+                    <button type="submit" class="btn-pay">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        @Model.NetBalance.ToString("N2", tr) ₺ Öde
+                    </button>
+                </div>
+            </form>
+            <button id="btnCloseModal" style="width:100%;margin-top:12px;padding:10px;background:transparent;border:1px solid var(--border-glass);border-radius:10px;color:var(--text-muted);cursor:pointer;font-size:13px">
+                İptal
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// ── Sanal POS Modal ───────────────────────────────────────────────────────────
+const modal     = document.getElementById('posModal');
+const btnOpen   = document.getElementById('btnPayModal');
+const btnClose  = document.getElementById('btnCloseModal');
+
+btnOpen.addEventListener('click', () => modal.classList.add('show'));
+btnClose.addEventListener('click', () => modal.classList.remove('show'));
+modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('show'); });
+
+// ── Kart Numarası Otomatik Boşluk ─────────────────────────────────────────────
+document.getElementById('cardNumber').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '').substring(0, 16);
+    this.value = v.match(/.{1,4}/g)?.join(' ') || v;
+});
+
+// ── Son Kullanma Tarihi Otomatik / ───────────────────────────────────────────
+document.getElementById('expiry').addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '');
+    if (v.length >= 2) v = v.substring(0,2) + '/' + v.substring(2,4);
+    this.value = v;
+});
+
+// ── Kredi Bar Animasyonu ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const bar = document.getElementById('creditBar');
+    if (bar) {
+        const target = '@Model.UsedLimitPct.ToString("0", tr)';
+        bar.style.width = '0%';
+        setTimeout(() => bar.style.width = target + '%', 400);
+    }
+});
+</script>
+}
