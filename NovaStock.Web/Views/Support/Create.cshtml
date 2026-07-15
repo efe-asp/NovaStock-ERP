@@ -1,0 +1,153 @@
+@model NovaStock.Web.ViewModels.CreateTicketViewModel
+@{
+    ViewData["Title"] = "Yeni Destek Talebi";
+}
+
+@section Styles {
+<style>
+.create-ticket-form { max-width: 760px; margin: 0 auto; }
+.form-group { margin-bottom: 20px; }
+.form-label { font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block; color: var(--text-secondary); }
+.form-control-nova {
+    width: 100%; padding: 12px 16px;
+    background: var(--bg-body); border: 1.5px solid var(--border-glass);
+    border-radius: 10px; color: var(--text-primary); font-size: 14px;
+    transition: border-color .2s; font-family: inherit;
+}
+.form-control-nova:focus { outline: none; border-color: var(--accent); }
+.form-select-nova {
+    width: 100%; padding: 12px 16px;
+    background: var(--bg-body); border: 1.5px solid var(--border-glass);
+    border-radius: 10px; color: var(--text-primary); font-size: 14px;
+    transition: border-color .2s; appearance: none; cursor: pointer;
+}
+.form-select-nova:focus { outline: none; border-color: var(--accent); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@@media (max-width:600px) { .form-row { grid-template-columns: 1fr; } }
+.priority-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.priority-card {
+    padding: 14px 16px; border-radius: 12px; cursor: pointer;
+    border: 2px solid var(--border-glass); text-align: center;
+    transition: all .2s;
+}
+.priority-card input[type=radio] { display: none; }
+.priority-card.selected-low    { border-color: var(--text-muted); background: rgba(148,163,184,.1); }
+.priority-card.selected-medium { border-color: var(--yellow); background: rgba(245,158,11,.1); }
+.priority-card.selected-high   { border-color: var(--red); background: rgba(239,68,68,.1); }
+</style>
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-ticket" style="color:var(--accent-light);margin-right:10px"></i>Yeni Destek Talebi</h1>
+        <div class="breadcrumb-nova"><a href="/Support" style="color:var(--text-muted)">Destek Talepleri</a> · Yeni Talep</div>
+    </div>
+    <a href="/Support" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Geri</a>
+</div>
+
+<div class="create-ticket-form">
+    <div class="glass-card p-4">
+        <form asp-action="Create" asp-controller="Support" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <!-- Kategori -->
+            <div class="form-group">
+                <label class="form-label"><i class="fa-solid fa-tag" style="margin-right:6px;color:var(--accent-light)"></i>Kategori *</label>
+                <select asp-for="Category" class="form-select-nova" id="catSelect">
+                    <option value="0">💰 Finans / Fatura</option>
+                    <option value="1">🚚 Lojistik / Kargo</option>
+                    <option value="2">🔧 Arızalı Ürün / İade (RMA)</option>
+                    <option value="3">❓ Diğer</option>
+                </select>
+                <span asp-validation-for="Category" class="text-danger" style="font-size:12px"></span>
+            </div>
+
+            <!-- İlgili Sipariş (RMA için öne çıkıyor) -->
+            <div class="form-group" id="orderRow">
+                <label class="form-label"><i class="fa-solid fa-receipt" style="margin-right:6px;color:var(--yellow)"></i>İlgili Sipariş Numarası <span style="color:var(--text-muted)">(opsiyonel)</span></label>
+                <input asp-for="RelatedOrderNumber" class="form-control-nova" placeholder="Örn: ORD-20260001" />
+                <span asp-validation-for="RelatedOrderNumber" class="text-danger" style="font-size:12px"></span>
+            </div>
+
+            <!-- Konu -->
+            <div class="form-group">
+                <label class="form-label"><i class="fa-solid fa-pen" style="margin-right:6px;color:var(--accent-light)"></i>Konu *</label>
+                <input asp-for="Subject" class="form-control-nova" placeholder="Örn: Realme C55 Kargo Hasarı Hakkında" />
+                <span asp-validation-for="Subject" class="text-danger" style="font-size:12px"></span>
+            </div>
+
+            <!-- Önem Derecesi -->
+            <div class="form-group">
+                <label class="form-label"><i class="fa-solid fa-fire" style="margin-right:6px;color:var(--red)"></i>Önem Derecesi *</label>
+                <div class="priority-cards">
+                    <label class="priority-card" id="card-low">
+                        <input type="radio" asp-for="Priority" value="0" checked />
+                        <div style="font-size:20px;margin-bottom:6px">🟢</div>
+                        <div style="font-weight:700;font-size:13px">Düşük</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Acil değil</div>
+                    </label>
+                    <label class="priority-card" id="card-medium">
+                        <input type="radio" asp-for="Priority" value="1" />
+                        <div style="font-size:20px;margin-bottom:6px">🟡</div>
+                        <div style="font-weight:700;font-size:13px">Orta</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Normal süreç</div>
+                    </label>
+                    <label class="priority-card" id="card-high">
+                        <input type="radio" asp-for="Priority" value="2" />
+                        <div style="font-size:20px;margin-bottom:6px">🔴</div>
+                        <div style="font-weight:700;font-size:13px">Yüksek</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Acil müdahale</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Mesaj -->
+            <div class="form-group">
+                <label class="form-label"><i class="fa-solid fa-message" style="margin-right:6px;color:var(--cyan)"></i>Mesajınız *</label>
+                <textarea asp-for="Message" class="form-control-nova" rows="6"
+                    placeholder="Sorunuzu veya talebinizi detaylı açıklayın. RMA talepleri için ürünün seri numarasını ve hasar durumunu belirtiniz."></textarea>
+                <span asp-validation-for="Message" class="text-danger" style="font-size:12px"></span>
+            </div>
+
+            <!-- Dosya Eki -->
+            <div class="form-group">
+                <label class="form-label"><i class="fa-solid fa-paperclip" style="margin-right:6px;color:var(--accent-light)"></i>Dosya Ekle <span style="color:var(--text-muted)">(opsiyonel – görsel veya PDF)</span></label>
+                <div style="border:2px dashed var(--border-glass);border-radius:12px;padding:24px;text-align:center;cursor:pointer" onclick="document.getElementById('fileInput').click()">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size:28px;color:var(--text-muted);margin-bottom:10px;display:block"></i>
+                    <div style="font-size:13px;color:var(--text-muted)" id="fileLabel">
+                        Fotoğraf veya PDF yüklemek için tıklayın<br>
+                        <small>Maks 10MB – .jpg .png .pdf .xlsx desteklenir</small>
+                    </div>
+                    <input type="file" asp-for="Attachment" id="fileInput" style="display:none"
+                        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.xlsx,.docx"
+                        onchange="document.getElementById('fileLabel').innerHTML = '<strong>' + this.files[0]?.name + '</strong> seçildi'" />
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;justify-content:flex-end">
+                <a href="/Support" class="btn-nova-outline">İptal</a>
+                <button type="submit" class="btn-nova" id="submitBtn">
+                    <i class="fa-solid fa-paper-plane"></i> Talep Oluştur
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// Öncelik kartları interactive
+document.querySelectorAll('.priority-card input[type=radio]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        document.querySelectorAll('.priority-card').forEach(c => c.className = 'priority-card');
+        if (radio.value === '0') radio.closest('.priority-card').classList.add('selected-low');
+        if (radio.value === '1') radio.closest('.priority-card').classList.add('selected-medium');
+        if (radio.value === '2') radio.closest('.priority-card').classList.add('selected-high');
+    });
+});
+
+// Başlangıçta seçili olanı işaretle
+const checkedRadio = document.querySelector('.priority-card input[type=radio]:checked');
+if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
+</script>
+}

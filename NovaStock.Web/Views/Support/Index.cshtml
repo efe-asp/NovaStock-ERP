@@ -1,0 +1,160 @@
+@model List<NovaStock.Web.ViewModels.SupportTicketListItem>
+@{
+    ViewData["Title"] = "Destek Talepleri";
+    var isAdmin = (bool)(ViewBag.IsAdmin ?? false);
+    var filter  = (string)(ViewBag.Filter ?? "all");
+    var tr      = new System.Globalization.CultureInfo("tr-TR");
+}
+
+@section Styles {
+<style>
+/* ── Destek Portalı Stilleri ────────────────────────────────────── */
+.ticket-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.ticket-filter-btn {
+    padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    border: 1.5px solid var(--border-glass); background: transparent;
+    color: var(--text-muted); cursor: pointer; text-decoration: none;
+    transition: all .2s;
+}
+.ticket-filter-btn:hover, .ticket-filter-btn.active {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.ticket-filter-btn.active-open     { background: var(--yellow); border-color: var(--yellow); color: #1a1f2e; }
+.ticket-filter-btn.active-answered { background: var(--cyan);   border-color: var(--cyan);   color: #1a1f2e; }
+.ticket-filter-btn.active-resolved { background: var(--text-muted); border-color: var(--text-muted); color: #fff; }
+</style>
+}
+
+<!-- ── Page Header ──────────────────────────────────────────────────────────── -->
+<div class="page-header">
+    <div>
+        <h1><i class="fa-solid fa-headset" style="color:var(--accent-light);margin-right:10px"></i>Destek Talepleri</h1>
+        <div class="breadcrumb-nova">B2B Destek & RMA Portalı</div>
+    </div>
+    @if (!isAdmin)
+    {
+        <a href="/Support/Create" class="btn-nova" id="btnNewTicket">
+            <i class="fa-solid fa-plus"></i> Yeni Destek Talebi
+        </a>
+    }
+</div>
+
+<!-- ── Özet Sayaçlar ────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="glass-card p-4" style="border-top:3px solid var(--yellow)">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Açık Talepler</div>
+            <div style="font-size:32px;font-weight:800;color:var(--yellow)">@ViewBag.OpenCount</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card p-4" style="border-top:3px solid var(--cyan)">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Yanıtlananlar</div>
+            <div style="font-size:32px;font-weight:800;color:var(--cyan)">@ViewBag.AnsweredCount</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card p-4" style="border-top:3px solid var(--text-muted)">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Çözülenler</div>
+            <div style="font-size:32px;font-weight:800;color:var(--text-muted)">@ViewBag.ResolvedCount</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Filtreler ─────────────────────────────────────────────────── -->
+<div class="ticket-filters">
+    <a href="/Support" class="ticket-filter-btn @(filter == "all" ? "active" : "")">
+        <i class="fa-solid fa-list"></i> Tümü (@Model.Count)
+    </a>
+    <a href="/Support?filter=open" class="ticket-filter-btn @(filter == "open" ? "active-open" : "")">
+        <i class="fa-solid fa-clock"></i> Açık (@ViewBag.OpenCount)
+    </a>
+    <a href="/Support?filter=answered" class="ticket-filter-btn @(filter == "answered" ? "active-answered" : "")">
+        <i class="fa-solid fa-reply"></i> Yanıtlandı (@ViewBag.AnsweredCount)
+    </a>
+    <a href="/Support?filter=resolved" class="ticket-filter-btn @(filter == "resolved" ? "active-resolved" : "")">
+        <i class="fa-solid fa-circle-check"></i> Kapatıldı (@ViewBag.ResolvedCount)
+    </a>
+</div>
+
+<!-- ── Talep Tablosu ─────────────────────────────────────────────── -->
+<div class="glass-card">
+    <div style="overflow-x:auto">
+        <table class="nova-table">
+            <thead>
+                <tr>
+                    <th>Talep No</th>
+                    <th>Kategori</th>
+                    <th>Konu</th>
+                    <th>Önem</th>
+                    @if (isAdmin)
+                    {
+                        <th>Atanan</th>
+                    }
+                    <th>Son Güncelleme</th>
+                    <th>Durum</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:60px;color:var(--text-muted)">
+                        <i class="fa-solid fa-ticket" style="font-size:36px;opacity:.25;display:block;margin-bottom:14px"></i>
+                        Henüz destek talebiniz bulunmuyor.
+                        @if (!isAdmin)
+                        {
+                            <br>
+                            <a href="/Support/Create" class="btn-nova" style="margin-top:14px;display:inline-flex">
+                                <i class="fa-solid fa-plus"></i> İlk Talebi Oluştur
+                            </a>
+                        }
+                    </td>
+                </tr>
+            }
+            @foreach (var t in Model)
+            {
+                <tr style="cursor:pointer" onclick="window.location='/Support/Detail/@t.Id'">
+                    <td>
+                        <span style="font-family:monospace;font-weight:700;color:var(--accent)">@t.TicketCode</span>
+                        @if (t.UnreadCount > 0)
+                        {
+                            <span class="badge-nova badge-red" style="font-size:10px;margin-left:6px">@t.UnreadCount yeni</span>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge-nova badge-purple">@t.CategoryLabel</span>
+                    </td>
+                    <td style="font-weight:600;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                        @t.Subject
+                        @if (!string.IsNullOrEmpty(t.RelatedOrderNumber))
+                        {
+                            <div style="font-size:11px;color:var(--text-muted);font-family:monospace">
+                                <i class="fa-solid fa-receipt" style="margin-right:4px"></i>@t.RelatedOrderNumber
+                            </div>
+                        }
+                    </td>
+                    <td><span class="badge-nova @t.PriorityBadgeClass">@t.PriorityLabel</span></td>
+                    @if (isAdmin)
+                    {
+                        <td style="font-size:12px;color:var(--text-muted)">
+                            @(t.AssignedToName ?? "—")
+                        </td>
+                    }
+                    <td style="font-size:12px;color:var(--text-muted)">
+                        @t.LastActivityAt.ToLocalTime().ToString("dd MMM yyyy", tr)
+                        <div style="font-size:11px">@t.LastActivityAt.ToLocalTime().ToString("HH:mm")</div>
+                    </td>
+                    <td><span class="badge-nova @t.StatusBadgeClass">@t.StatusLabel</span></td>
+                    <td>
+                        <a href="/Support/Detail/@t.Id" class="btn-nova-outline" style="padding:5px 10px;font-size:11px" onclick="event.stopPropagation()">
+                            <i class="fa-solid fa-eye"></i> Aç
+                        </a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

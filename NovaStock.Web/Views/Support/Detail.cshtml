@@ -1,0 +1,283 @@
+@model NovaStock.Web.ViewModels.SupportTicketDetailViewModel
+@{
+    ViewData["Title"] = $"Talep {Model.TicketCode}";
+    var tr = new System.Globalization.CultureInfo("tr-TR");
+}
+
+@section Styles {
+<style>
+/* ── Mesajlaşma Ekranı ──────────────────────────────────────────── */
+.ticket-detail-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+@@media (max-width:900px) {
+    .ticket-detail-layout { grid-template-columns: 1fr; }
+}
+.ticket-sidebar {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: sticky; top: 20px;
+}
+.ticket-sidebar-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--text-muted); margin-bottom: 4px;
+}
+.ticket-sidebar-value { font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+
+/* Mesaj timeline */
+.message-timeline { display: flex; flex-direction: column; gap: 16px; padding: 24px; }
+.msg-bubble-wrap { display: flex; gap: 12px; }
+.msg-bubble-wrap.admin { flex-direction: row-reverse; }
+.msg-avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff;
+}
+.msg-bubble {
+    max-width: 70%; padding: 14px 16px;
+    border-radius: 16px; font-size: 13px; line-height: 1.6;
+    position: relative;
+}
+.msg-bubble.dealer {
+    background: var(--bg-body);
+    border: 1px solid var(--border-glass);
+    border-bottom-left-radius: 4px;
+}
+.msg-bubble.admin-msg {
+    background: linear-gradient(135deg, rgba(99,102,241,.15), rgba(6,182,212,.12));
+    border: 1px solid rgba(99,102,241,.3);
+    border-bottom-right-radius: 4px;
+}
+.msg-meta {
+    font-size: 11px; color: var(--text-muted); margin-top: 6px;
+    display: flex; align-items: center; gap: 8px;
+}
+.msg-attachment {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 8px;
+    background: rgba(255,255,255,.06); border: 1px solid var(--border-glass);
+    font-size: 12px; text-decoration: none; color: var(--text-primary);
+    margin-top: 8px; transition: background .2s;
+}
+.msg-attachment:hover { background: rgba(255,255,255,.1); }
+
+/* Cevap formu */
+.reply-box {
+    border-top: 1px solid var(--border-glass);
+    padding: 20px 24px;
+    background: var(--bg-card);
+}
+.reply-textarea {
+    width: 100%; padding: 14px;
+    background: var(--bg-body); border: 1.5px solid var(--border-glass);
+    border-radius: 12px; color: var(--text-primary); font-size: 13px;
+    resize: vertical; min-height: 100px; transition: border-color .2s;
+    font-family: inherit;
+}
+.reply-textarea:focus { outline: none; border-color: var(--accent); }
+</style>
+}
+
+<!-- ── Page Header ──────────────────────────────────────────────────────────── -->
+<div class="page-header">
+    <div>
+        <h1 style="font-size:20px">
+            <i class="fa-solid fa-@Model.CategoryIcon" style="color:var(--accent-light);margin-right:10px"></i>
+            @Model.TicketCode – @Model.Subject
+        </h1>
+        <div class="breadcrumb-nova">
+            <a href="/Support" style="color:var(--text-muted)">Destek Talepleri</a> · @Model.TicketCode
+        </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+        <span class="badge-nova @Model.StatusBadgeClass" style="font-size:13px;padding:8px 16px">@Model.StatusLabel</span>
+        <span class="badge-nova @Model.PriorityBadgeClass">@Model.PriorityLabel Öncelik</span>
+        @if (Model.IsAdmin && Model.Status != NovaStock.Web.Models.TicketStatus.Resolved)
+        {
+            <form asp-action="Close" asp-controller="Support" method="post" style="margin:0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn-nova-outline" onclick="return confirm('Bu talep kapatılsın mı?')">
+                    <i class="fa-solid fa-circle-check"></i> Kapat
+                </button>
+            </form>
+        }
+        <a href="/Support" class="btn-nova-outline"><i class="fa-solid fa-arrow-left"></i> Geri</a>
+    </div>
+</div>
+
+<!-- ── 2 Sütunlu Layout ─────────────────────────────────────────────────────── -->
+<div class="ticket-detail-layout">
+
+    <!-- Sol: Talep Meta ───────────────────────────────────────────────────────── -->
+    <div class="ticket-sidebar">
+        <div style="font-size:14px;font-weight:700;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-glass)">
+            <i class="fa-solid fa-circle-info" style="color:var(--accent-light);margin-right:8px"></i>Talep Bilgileri
+        </div>
+
+        <div class="ticket-sidebar-label">Talep No</div>
+        <div class="ticket-sidebar-value" style="font-family:monospace;color:var(--accent)">@Model.TicketCode</div>
+
+        <div class="ticket-sidebar-label">Kategori</div>
+        <div class="ticket-sidebar-value">
+            <i class="fa-solid @Model.CategoryIcon" style="margin-right:6px;color:var(--accent-light)"></i>
+            @Model.CategoryLabel
+        </div>
+
+        <div class="ticket-sidebar-label">Durum</div>
+        <div class="ticket-sidebar-value"><span class="badge-nova @Model.StatusBadgeClass">@Model.StatusLabel</span></div>
+
+        <div class="ticket-sidebar-label">Önem Derecesi</div>
+        <div class="ticket-sidebar-value"><span class="badge-nova @Model.PriorityBadgeClass">@Model.PriorityLabel</span></div>
+
+        @if (!string.IsNullOrEmpty(Model.RelatedOrderNumber))
+        {
+            <div class="ticket-sidebar-label">İlgili Sipariş</div>
+            <div class="ticket-sidebar-value">
+                <a href="/Order/Detail/@Model.RelatedOrderId" style="font-family:monospace;color:var(--cyan)">
+                    <i class="fa-solid fa-receipt" style="margin-right:4px"></i>@Model.RelatedOrderNumber
+                </a>
+            </div>
+        }
+
+        @if (Model.IsAdmin)
+        {
+            <div class="ticket-sidebar-label">Bayi</div>
+            <div class="ticket-sidebar-value">@Model.DealerName<div style="font-size:11px;color:var(--text-muted)">@Model.DealerCompany</div></div>
+        }
+
+        <div class="ticket-sidebar-label">Atanan Temsilci</div>
+        <div class="ticket-sidebar-value">
+            @if (!string.IsNullOrEmpty(Model.AssignedToName))
+            {
+                <span><i class="fa-solid fa-user-headset" style="color:var(--green);margin-right:6px"></i>@Model.AssignedToName</span>
+            }
+            else
+            {
+                <span style="color:var(--text-muted)">Atanmadı</span>
+            }
+        </div>
+
+        <div class="ticket-sidebar-label">Açılış Tarihi</div>
+        <div class="ticket-sidebar-value" style="font-size:12px">@Model.CreatedAt.ToLocalTime().ToString("dd MMMM yyyy HH:mm", tr)</div>
+
+        <div class="ticket-sidebar-label">Son Aktivite</div>
+        <div class="ticket-sidebar-value" style="font-size:12px">@Model.LastActivityAt.ToLocalTime().ToString("dd MMMM yyyy HH:mm", tr)</div>
+    </div>
+
+    <!-- Sağ: Mesaj Timeline ────────────────────────────────────────────────────── -->
+    <div class="glass-card" style="padding:0;overflow:hidden">
+        <div style="padding:18px 24px;border-bottom:1px solid var(--border-glass);display:flex;align-items:center;gap:10px">
+            <i class="fa-solid fa-comments" style="color:var(--accent-light)"></i>
+            <span style="font-size:15px;font-weight:600">Mesaj Akışı</span>
+            <span class="badge-nova badge-purple" style="font-size:11px">@Model.Messages.Count mesaj</span>
+        </div>
+
+        <!-- Mesajlar -->
+        <div class="message-timeline" id="msgTimeline">
+        @if (!Model.Messages.Any())
+        {
+            <div style="text-align:center;padding:40px;color:var(--text-muted)">
+                <i class="fa-regular fa-comments" style="font-size:32px;opacity:.25;display:block;margin-bottom:12px"></i>
+                Henüz mesaj yok.
+            </div>
+        }
+        @foreach (var msg in Model.Messages)
+        {
+            var wrapClass = msg.IsFromAdmin ? "admin" : "";
+            var avatarBg  = msg.IsFromAdmin ? "linear-gradient(135deg,#7c3aed,#06b6d4)" : "linear-gradient(135deg,#f59e0b,#d97706)";
+            var bubbleClass = msg.IsFromAdmin ? "admin-msg" : "dealer";
+            var initial   = msg.SenderName.Length > 0 ? msg.SenderName[0].ToString().ToUpper() : "?";
+
+            <div class="msg-bubble-wrap @wrapClass">
+                <div class="msg-avatar" style="background:@avatarBg">@initial</div>
+                <div>
+                    <div class="msg-bubble @bubbleClass">
+                        @msg.Body
+                        @foreach (var att in msg.Attachments)
+                        {
+                            <div>
+                            @if (att.IsImage)
+                            {
+                                <div style="margin-top:10px">
+                                    <img src="@att.FilePath" alt="@att.FileName" style="max-width:260px;max-height:200px;border-radius:10px;cursor:pointer" onclick="window.open(this.src)" />
+                                </div>
+                            }
+                            else
+                            {
+                                <a href="@att.FilePath" class="msg-attachment" target="_blank">
+                                    <i class="fa-solid fa-paperclip"></i> @att.FileName
+                                    <span style="color:var(--text-muted)">(@att.FileSizeLabel)</span>
+                                </a>
+                            }
+                            </div>
+                        }
+                    </div>
+                    <div class="msg-meta @(msg.IsFromAdmin ? "justify-content-end" : "")">
+                        <span style="font-weight:600">@msg.SenderName</span>
+                        @if (msg.IsFromAdmin) { <span class="badge-nova badge-purple" style="font-size:10px">Admin</span> }
+                        · @msg.CreatedAt.ToLocalTime().ToString("dd MMM HH:mm", tr)
+                    </div>
+                </div>
+            </div>
+        }
+        </div>
+
+        <!-- Cevap Formu -->
+        @if (Model.Status != NovaStock.Web.Models.TicketStatus.Resolved)
+        {
+            <div class="reply-box">
+                <form asp-action="Reply" asp-controller="Support" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="TicketId" value="@Model.Id" />
+                    <textarea name="Body" class="reply-textarea" placeholder="Yanıtınızı buraya yazın..." required id="replyBody"></textarea>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px">
+                        <label for="replyFile" style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">
+                            <i class="fa-solid fa-paperclip"></i>
+                            <span id="fileLabel">Dosya Ekle (görsel veya PDF)</span>
+                            <input type="file" name="Attachment" id="replyFile" style="display:none"
+                                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.xlsx,.docx"
+                                onchange="document.getElementById('fileLabel').textContent = this.files[0]?.name ?? 'Dosya Ekle'" />
+                        </label>
+                        <div style="display:flex;gap:10px;align-items:center">
+                            @if (Model.IsAdmin)
+                            {
+                                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                                    <input type="checkbox" name="CloseTicket" value="true" style="accent-color:var(--green)" />
+                                    Yanıtlayıp Kapat
+                                </label>
+                            }
+                            <button type="submit" class="btn-nova">
+                                <i class="fa-solid fa-paper-plane"></i>
+                                @(Model.IsAdmin ? "Yanıtla" : "Gönder")
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="reply-box" style="text-align:center;color:var(--text-muted)">
+                <i class="fa-solid fa-circle-check" style="color:var(--green);margin-right:6px"></i>
+                Bu talep kapatılmıştır.
+            </div>
+        }
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+// Sayfayı en alta kaydır (en son mesajı göster)
+document.addEventListener('DOMContentLoaded', () => {
+    const timeline = document.getElementById('msgTimeline');
+    if (timeline) timeline.scrollTop = timeline.scrollHeight;
+});
+</script>
+}
