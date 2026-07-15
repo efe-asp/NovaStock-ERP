@@ -519,4 +519,42 @@ public class ProductController : Controller
 
         _logger.LogWarning("Kritik stok: {Product} – {Stock} adet kaldı.", product.Name, product.StockCount);
     }
+
+    // ─── FİYAT MATRİSİ EXCEL EXPORT (Dealer) ─────────────────────────────────────────────
+    /// <summary>
+    /// Bayiye özel tier indirimli fiyat listesini Excel olarak indirir.
+    /// Gold: %15 | Silver: %8 | Bronze: Liste fiyatı.
+    /// </summary>
+    [Authorize(Roles = "Dealer,DealerPurchase")]
+    public async Task<IActionResult> ExportPriceList()
+    {
+        var currentUser = await HttpContext.RequestServices
+            .GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>()
+            .GetUserAsync(User);
+
+        if (currentUser is null) return Challenge();
+
+        // Sub-user ise ana bayinin tier’ını kullan
+        var dealer = currentUser;
+        if (!string.IsNullOrEmpty(currentUser.ParentDealerId))
+        {
+            var parent = await HttpContext.RequestServices
+                .GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>()
+                .FindByIdAsync(currentUser.ParentDealerId);
+            if (parent != null) dealer = parent;
+        }
+
+        var products = await _context.Products
+            .Include(p => p.Category)
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.Category!.Name)
+            .ThenBy(p => p.Name)
+            .ToListAsync();
+
+        var bytes    = _excel.ExportPriceMatrix(products, dealer.Tier, dealer.CompanyName);
+        var fileName = $"FiyatListesi_{dealer.CompanyName.Replace(" ", "_")}_{dealer.Tier}_{DateTime.Now:yyyyMMdd}.xlsx";
+
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
 }
+
