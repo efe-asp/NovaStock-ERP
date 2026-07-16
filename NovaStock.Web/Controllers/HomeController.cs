@@ -53,6 +53,7 @@ public class HomeController : Controller
         var totalOrders        = await _context.Orders.CountAsync();
         var pendingOrders      = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending);
         var totalDealers       = await _context.Users.CountAsync();
+        var openSupportTickets = await _context.SupportTickets.CountAsync(t => t.Status == TicketStatus.Open);
         var monthlyRevenue     = await _context.Orders
             .Where(o => o.CreatedAt >= monthStart && o.Status != OrderStatus.Cancelled)
             .SumAsync(o => (decimal?)o.Total) ?? 0m;
