@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using NovaStock.Web.Data;
+using NovaStock.Web.Hubs;
 using NovaStock.Web.Models;
 using NovaStock.Web.ViewModels;
 using System.Text.Json;
@@ -12,6 +14,7 @@ namespace NovaStock.Web.Controllers;
 /// <summary>
 /// B2B Destek Talepleri (Support Ticket / RMA Portal).
 /// Bayiler destek talebi oluşturur, admin yanıtlar.
+/// Her iki taraf da bildirim alır (DB + SignalR).
 /// </summary>
 [Authorize]
 public class SupportController : Controller
@@ -20,17 +23,20 @@ public class SupportController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<SupportController>   _logger;
     private readonly IWebHostEnvironment          _env;
+    private readonly IHubContext<NotificationHub> _hub;
 
     public SupportController(
         ApplicationDbContext          context,
         UserManager<ApplicationUser>  userManager,
         ILogger<SupportController>    logger,
-        IWebHostEnvironment           env)
+        IWebHostEnvironment           env,
+        IHubContext<NotificationHub>  hub)
     {
         _context     = context;
         _userManager = userManager;
         _logger      = logger;
         _env         = env;
+        _hub         = hub;
     }
 
     // ─── INDEX – Talep Listesi ───────────────────────────────────────────────────
@@ -148,6 +154,13 @@ public class SupportController : Controller
             })
             .ToList();
 
+        // Admin kullanıcı listesini getir (temsilci atama dropdown'ı için)
+        var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+        var adminSelectItems = adminUsers
+            .OrderBy(u => u.FullName)
+            .Select(u => new AdminSelectItem { Id = u.Id, FullName = u.FullName })
+            .ToList();
+
         var vm = new SupportTicketDetailViewModel
         {
             Id                 = ticket.Id,
@@ -157,12 +170,14 @@ public class SupportController : Controller
             Status             = ticket.Status,
             RelatedOrderNumber = ticket.RelatedOrderNumber,
             RelatedOrderId     = ticket.RelatedOrderId,
+            AssignedToId       = ticket.AssignedToId,
             AssignedToName     = ticket.AssignedTo?.FullName,
             DealerName         = ticket.Dealer?.FullName ?? "",
             DealerCompany      = ticket.Dealer?.CompanyName ?? "",
             CreatedAt          = ticket.CreatedAt,
             LastActivityAt     = ticket.LastActivityAt,
             IsAdmin            = isAdmin,
+            AdminUsers         = adminSelectItems,
             Messages           = messageVms
         };
 
@@ -223,10 +238,31 @@ public class SupportController : Controller
         };
 
         _context.TicketMessages.Add(message);
+
+        // ── Adminlere DB bildirimi oluştur ────────────────────────────────────────
+        var adminNotification = new Notification
+        {
+            Title     = $"Yeni Destek Talebi – #DST-{ticket.Id:D4}",
+            Message   = $"{currentUser.FullName} ({currentUser.CompanyName}): {vm.Subject}",
+            Type      = "support",
+            IconClass = "fa-headset",
+            UserId    = null  // null = tüm adminler
+        };
+        _context.Notifications.Add(adminNotification);
+
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Yeni destek talebi: #{Id} – {Subject} ({Category}) – Bayi: {Dealer}",
             ticket.Id, ticket.Subject, ticket.Category, currentUser.FullName);
+
+        // ── Adminlere SignalR gerçek zamanlı bildirim ─────────────────────────────
+        await _hub.Clients.Group("Admins").SendAsync("ReceiveSupportTicketNotification", new
+        {
+            TicketId   = ticket.Id,
+            Subject    = ticket.Subject,
+            DealerName = currentUser.FullName,
+            Timestamp  = DateTime.Now.ToString("HH:mm")
+        });
 
         TempData["Success"] = $"Destek talebiniz oluşturuldu. Talep No: #DST-{ticket.Id:D4}";
         return RedirectToAction(nameof(Detail), new { id = ticket.Id });
@@ -248,7 +284,9 @@ public class SupportController : Controller
         var isAdmin = User.IsInRole("Admin");
         var dealerId = currentUser.ParentDealerId ?? currentUser.Id;
 
-        var ticket = await _context.SupportTickets.FindAsync(vm.TicketId);
+        var ticket = await _context.SupportTickets
+            .Include(t => t.Dealer)
+            .FirstOrDefaultAsync(t => t.Id == vm.TicketId);
         if (ticket is null) return NotFound();
 
         if (!isAdmin && ticket.DealerId != dealerId) return Forbid();
@@ -280,9 +318,101 @@ public class SupportController : Controller
         if (isAdmin && ticket.AssignedToId == null)
             ticket.AssignedToId = currentUser.Id;
 
-        await _context.SaveChangesAsync();
+        if (isAdmin)
+        {
+            // ── Admin yanıtladı → Bayiye bildirim ────────────────────────────────
+            var statusText = vm.CloseTicket ? "kapatıldı" : "yanıtlandı";
+            var dealerNotification = new Notification
+            {
+                Title     = $"Destek Talebiniz {char.ToUpper(statusText[0])}{statusText[1..]} – #DST-{ticket.Id:D4}",
+                Message   = $"{ticket.Subject} başlıklı talebiniz {statusText}.",
+                Type      = "support",
+                IconClass = "fa-headset",
+                UserId    = ticket.DealerId  // bayiye özel
+            };
+            _context.Notifications.Add(dealerNotification);
+            await _context.SaveChangesAsync();
+
+            // SignalR: bayi kişisel grubuna gönder
+            await _hub.Clients.Group($"Dealer_{ticket.DealerId}").SendAsync("ReceiveDealerNotification", new
+            {
+                TicketId  = ticket.Id,
+                Message   = $"#{ticket.Id:D4} no'lu talebiniz {statusText}.",
+                Timestamp = DateTime.Now.ToString("HH:mm")
+            });
+        }
+        else
+        {
+            // ── Bayi yanıtladı → Adminlere bildirim ──────────────────────────────
+            var adminNotification = new Notification
+            {
+                Title     = $"Destek Talebinde Yeni Mesaj – #DST-{ticket.Id:D4}",
+                Message   = $"{ticket.Dealer?.FullName ?? "Bayi"}: {ticket.Subject}",
+                Type      = "support",
+                IconClass = "fa-headset",
+                UserId    = null  // null = tüm adminler
+            };
+            _context.Notifications.Add(adminNotification);
+            await _context.SaveChangesAsync();
+
+            // SignalR: admin grubuna gönder
+            await _hub.Clients.Group("Admins").SendAsync("ReceiveSupportTicketNotification", new
+            {
+                TicketId   = ticket.Id,
+                Subject    = ticket.Subject,
+                DealerName = ticket.Dealer?.FullName ?? "Bayi",
+                Timestamp  = DateTime.Now.ToString("HH:mm")
+            });
+        }
 
         return RedirectToAction(nameof(Detail), new { id = vm.TicketId });
+    }
+
+    // ─── ASSIGN POST (Admin) ────────────────────────────────────────────────────
+    [HttpPost, ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Assign(int ticketId, string assignedToId)
+    {
+        var ticket = await _context.SupportTickets
+            .Include(t => t.Dealer)
+            .FirstOrDefaultAsync(t => t.Id == ticketId);
+        if (ticket is null) return NotFound();
+
+        // Atanan temsilciyi güncelle
+        var assignedAdmin = await _userManager.FindByIdAsync(assignedToId);
+        if (assignedAdmin is null)
+        {
+            TempData["Error"] = "Seçilen temsilci bulunamadı.";
+            return RedirectToAction(nameof(Detail), new { id = ticketId });
+        }
+
+        ticket.AssignedToId   = assignedToId;
+        ticket.LastActivityAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        // Bayiye bildirim: temsilci atandı
+        var dealerNotification = new Notification
+        {
+            Title     = $"Temsilci Atandı – #DST-{ticketId:D4}",
+            Message   = $"{ticket.Subject} talebinize {assignedAdmin.FullName} atandı.",
+            Type      = "support",
+            IconClass = "fa-user-headset",
+            UserId    = ticket.DealerId
+        };
+        _context.Notifications.Add(dealerNotification);
+        await _context.SaveChangesAsync();
+
+        // SignalR: bayiye gerçek zamanlı bildirim
+        await _hub.Clients.Group($"Dealer_{ticket.DealerId}").SendAsync("ReceiveDealerNotification", new
+        {
+            TicketId  = ticketId,
+            Message   = $"#{ticketId:D4} no'lu talebinize {assignedAdmin.FullName} atandı.",
+            Timestamp = DateTime.Now.ToString("HH:mm")
+        });
+
+        _logger.LogInformation("Ticket #{Id} – Temsilci atandı: {Admin}", ticketId, assignedAdmin.FullName);
+        TempData["Success"] = $"Ön temsilci olarak {assignedAdmin.FullName} atandı.";
+        return RedirectToAction(nameof(Detail), new { id = ticketId });
     }
 
     // ─── CLOSE POST (Admin) ──────────────────────────────────────────────────────
@@ -290,12 +420,33 @@ public class SupportController : Controller
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Close(int id)
     {
-        var ticket = await _context.SupportTickets.FindAsync(id);
+        var ticket = await _context.SupportTickets
+            .Include(t => t.Dealer)
+            .FirstOrDefaultAsync(t => t.Id == id);
         if (ticket is null) return NotFound();
 
         ticket.Status   = TicketStatus.Resolved;
         ticket.ClosedAt = DateTime.UtcNow;
+
+        // Bayiye kapatma bildirimi
+        var dealerNotification = new Notification
+        {
+            Title     = $"Destek Talebiniz Kapatıldı – #DST-{id:D4}",
+            Message   = $"{ticket.Subject} başlıklı talebiniz çözüldü olarak işaretlendi.",
+            Type      = "support",
+            IconClass = "fa-circle-check",
+            UserId    = ticket.DealerId
+        };
+        _context.Notifications.Add(dealerNotification);
         await _context.SaveChangesAsync();
+
+        // SignalR: bayiye gerçek zamanlı bildirim
+        await _hub.Clients.Group($"Dealer_{ticket.DealerId}").SendAsync("ReceiveDealerNotification", new
+        {
+            TicketId  = id,
+            Message   = $"#{id:D4} no'lu talebiniz kapatıldı.",
+            Timestamp = DateTime.Now.ToString("HH:mm")
+        });
 
         TempData["Success"] = $"Talep #DST-{id:D4} kapatıldı.";
         return RedirectToAction(nameof(Index));
