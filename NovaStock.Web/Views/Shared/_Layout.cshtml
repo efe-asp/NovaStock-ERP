@@ -377,11 +377,13 @@
             from { opacity: 0; transform: translateX(100%); }
             to   { opacity: 1; transform: translateX(0); }
         }
-        .nova-toast.order  { border-left: 3px solid var(--green); }
-        .nova-toast.stock  { border-left: 3px solid var(--red); }
+        .nova-toast.order   { border-left: 3px solid var(--green); }
+        .nova-toast.stock   { border-left: 3px solid var(--red); }
+        .nova-toast.support { border-left: 3px solid var(--accent); }
         .nova-toast .toast-icon { font-size: 20px; flex-shrink: 0; }
-        .nova-toast.order .toast-icon  { color: var(--green); }
-        .nova-toast.stock .toast-icon  { color: var(--red); }
+        .nova-toast.order .toast-icon   { color: var(--green); }
+        .nova-toast.stock .toast-icon   { color: var(--red); }
+        .nova-toast.support .toast-icon { color: var(--accent); }
         .nova-toast .toast-body .toast-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
         .nova-toast .toast-body .toast-msg   { font-size: 12px; color: var(--text-muted); }
         .nova-toast .toast-time { font-size: 11px; color: var(--text-muted); margin-left: auto; flex-shrink: 0; }
@@ -488,6 +490,12 @@
                     <i class="fa-solid fa-trash-can-arrow-up"></i> Geri Dönüşüm
                 </a>
 
+                <div class="nav-section-label" style="margin-top:10px;">Destek</div>
+                <a href="/Support" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Support" ? "active" : "")">
+                    <i class="fa-solid fa-headset"></i> Destek Talepleri
+                    <span class="nav-badge" id="adminTicketBadge" style="display:none"></span>
+                </a>
+
                 <div class="nav-section-label" style="margin-top:10px;">Raporlar</div>
                 <a href="/Report/Sales" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" && ViewContext.RouteData.Values["action"]?.ToString() == "Sales" ? "active" : "")">
                     <i class="fa-solid fa-chart-line"></i> Satış Analitiği
@@ -536,6 +544,7 @@
                 <div class="nav-section-label" style="margin-top:10px;">Destek & Ekip</div>
                 <a href="/Support" class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Support" ? "active" : "")">
                     <i class="fa-solid fa-headset"></i> Destek Talepleri
+                    <span class="nav-badge" id="dealerTicketBadge" style="display:none"></span>
                 </a>
                 <a href="/Dealer/TeamManagement" class="nav-item-link @(ViewContext.RouteData.Values["action"]?.ToString() == "TeamManagement" ? "active" : "")">
                     <i class="fa-solid fa-users-gear"></i> Ekip Yönetimi
@@ -765,8 +774,36 @@
             }
         });
 
+        // ── Ticket rozeti güncelleme ──────────────────────────────────────────
+        async function fetchTicketCounts() {
+            try {
+                const res  = await fetch('/Notification/GetCounts');
+                const data = await res.json();
+                const badge = document.getElementById('adminTicketBadge');
+                if (badge) {
+                    if (data.openTicketCount > 0) {
+                        badge.textContent = data.openTicketCount > 9 ? '9+' : data.openTicketCount;
+                        badge.style.display = 'inline-flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                // Bayi: yanıtlanan talep rozeti (sidebar'da varsa)
+                const dealerBadge = document.getElementById('dealerTicketBadge');
+                if (dealerBadge) {
+                    if (data.openTicketCount > 0) {
+                        dealerBadge.textContent = data.openTicketCount > 9 ? '9+' : data.openTicketCount;
+                        dealerBadge.style.display = 'inline-flex';
+                    } else {
+                        dealerBadge.style.display = 'none';
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             fetchNotifications();
+            fetchTicketCounts();
         });
 
         const connection = new signalR.HubConnectionBuilder()
@@ -787,6 +824,26 @@
             showToast('stock', 'fa-solid fa-triangle-exclamation',
                 '⚠️ Kritik Stok!',
                 `${data.productName}: ${data.remainingStock} adet kaldı`,
+                data.timestamp);
+        });
+
+        // ── Destek Talebi Bildirimi (Admin tarafı) ───────────────────────────
+        connection.on("ReceiveSupportTicketNotification", data => {
+            fetchNotifications();
+            fetchTicketCounts();
+            showToast('support', 'fa-solid fa-headset',
+                'Yeni Destek Talebi',
+                `${data.dealerName}: ${data.subject}`,
+                data.timestamp);
+        });
+
+        // ── Bayi Bildirimi (Bayi tarafı) ─────────────────────────────────────
+        connection.on("ReceiveDealerNotification", data => {
+            fetchNotifications();
+            fetchTicketCounts();
+            showToast('support', 'fa-solid fa-headset',
+                'Destek Talebiniz Güncellendi',
+                data.message,
                 data.timestamp);
         });
 
