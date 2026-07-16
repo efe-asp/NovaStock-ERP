@@ -90,12 +90,16 @@ public class SupportTicketDetailViewModel
     public TicketStatus   Status          { get; set; }
     public string?        RelatedOrderNumber { get; set; }
     public int?           RelatedOrderId  { get; set; }
+    public string?        AssignedToId    { get; set; }
     public string?        AssignedToName  { get; set; }
     public string         DealerName      { get; set; } = string.Empty;
     public string         DealerCompany   { get; set; } = string.Empty;
     public DateTime       CreatedAt       { get; set; }
     public DateTime       LastActivityAt  { get; set; }
     public bool           IsAdmin         { get; set; }
+
+    /// <summary>Admin kullanıcı listesi – temsilci atama dropdown'ı için.</summary>
+    public List<AdminSelectItem> AdminUsers { get; set; } = [];
 
     public List<TicketMessageViewModel> Messages { get; set; } = [];
 
@@ -172,6 +176,13 @@ public class ReplyViewModel
     public IFormFile? Attachment { get; set; }
 
     public bool CloseTicket { get; set; } = false;
+}
+
+/// <summary>Admin dropdown'ı için basit ID+Ad modeli.</summary>
+public class AdminSelectItem
+{
+    public string Id       { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
 }
 
 // ─── Ledger / Statement ───────────────────────────────────────────────────────
