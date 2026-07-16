@@ -1,43 +1,54 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NovaStock.Web.Data;
+using NovaStock.Web.Models;
 
 namespace NovaStock.Web.Controllers;
 
 [Authorize]
 public class NotificationController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ApplicationDbContext         _context;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public NotificationController(ApplicationDbContext context)
+    public NotificationController(
+        ApplicationDbContext         context,
+        UserManager<ApplicationUser> userManager)
     {
-        _context = context;
+        _context     = context;
+        _userManager = userManager;
     }
 
     /// <summary>
     /// Kullanıcının en son bildirimlerini getirir.
-    /// Adminler genel bildirimleri, diğerleri kendilerine ait olanları görür (veya senaryoya göre değişir).
+    /// - Admin: UserId == null olan genel bildirimleri görür.
+    /// - Bayi / Alt kullanıcı: kendi UserId'siyle eşleşen bildirimleri görür.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetLatest()
     {
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser is null)
+            return Json(new { success = false });
+
         var isAdmin = User.IsInRole("Admin");
 
-        var query = _context.Notifications.AsQueryable();
+        IQueryable<Notification> query;
 
-        // Eğer adminse UserId'si null olanları da görsün (genel admin bildirimleri)
         if (isAdmin)
         {
-            // Admin hem kendine aitleri, hem de genel olanları (UserId = null) görür
-            query = query.Where(n => n.UserId == null); 
-            // Note: İleride spesifik bir admine atanmışsa n.UserId == currentUserId şartı eklenebilir.
+            // Admin: UserId == null olan genel / admin bildirimleri
+            query = _context.Notifications.Where(n => n.UserId == null);
         }
         else
         {
-            // Bayiler sadece kendilerine ait olanları görür.
-            // Fakat mevcut Hub tasarımı sadece Admins grubuna bildirim atıyor.
-            return Json(new { success = true, notifications = new List<object>(), unreadCount = 0 });
+            // Bayi ve alt kullanıcılar: kendi bildirimlerini görür
+            // Sub-user ise parent dealer'ın bildirimlerini de görebilsin
+            var dealerId = currentUser.ParentDealerId ?? currentUser.Id;
+            query = _context.Notifications
+                .Where(n => n.UserId == currentUser.Id || n.UserId == dealerId);
         }
 
         var notifications = await query
@@ -79,29 +90,70 @@ public class NotificationController : Controller
     }
 
     /// <summary>
-    /// Tümünü okundu işaretler
+    /// Tümünü okundu işaretler (hem admin hem bayi için).
     /// </summary>
     [HttpPost]
     public async Task<IActionResult> MarkAllAsRead()
     {
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser is null) return Ok();
+
         var isAdmin = User.IsInRole("Admin");
-        if (!isAdmin) return Ok();
 
-        var unreadNotifs = await _context.Notifications
-            .Where(n => n.UserId == null && !n.IsRead)
-            .ToListAsync();
+        List<Notification> unreadNotifs;
 
-        foreach(var notif in unreadNotifs)
+        if (isAdmin)
         {
+            unreadNotifs = await _context.Notifications
+                .Where(n => n.UserId == null && !n.IsRead)
+                .ToListAsync();
+        }
+        else
+        {
+            var dealerId = currentUser.ParentDealerId ?? currentUser.Id;
+            unreadNotifs = await _context.Notifications
+                .Where(n => (n.UserId == currentUser.Id || n.UserId == dealerId) && !n.IsRead)
+                .ToListAsync();
+        }
+
+        foreach (var notif in unreadNotifs)
             notif.IsRead = true;
-        }
 
-        if(unreadNotifs.Any())
-        {
+        if (unreadNotifs.Any())
             await _context.SaveChangesAsync();
-        }
 
         return Ok();
+    }
+
+    /// <summary>
+    /// Admin + bayi için açık ticket sayısı ve okunmamış bildirim sayısı.
+    /// Layout'ta rozet için JS tarafından fetch edilir.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetCounts()
+    {
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser is null)
+            return Json(new { openTicketCount = 0 });
+
+        var isAdmin = User.IsInRole("Admin");
+        int openTicketCount;
+
+        if (isAdmin)
+        {
+            openTicketCount = await _context.SupportTickets
+                .CountAsync(t => t.Status == TicketStatus.Open);
+        }
+        else
+        {
+            var dealerId = currentUser.ParentDealerId ?? currentUser.Id;
+            // Bayi için "yanıtlandı ama okunmadı" olan ticket sayısı
+            openTicketCount = await _context.SupportTickets
+                .Where(t => t.DealerId == dealerId && t.Status == TicketStatus.Answered)
+                .CountAsync(t => t.Messages.Any(m => !m.IsRead && m.IsFromAdmin));
+        }
+
+        return Json(new { openTicketCount });
     }
 
     private static string GetTimeAgo(DateTime dateTime)
