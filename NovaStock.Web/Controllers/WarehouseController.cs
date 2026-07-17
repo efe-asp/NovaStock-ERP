@@ -77,3 +77,4 @@ public class WarehouseController : Controller
         return RedirectToAction(nameof(Detail), new { id = fromWarehouseId });
     }
 }
+
