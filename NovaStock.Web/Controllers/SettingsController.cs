@@ -115,3 +115,4 @@ public class SettingsController : Controller
         return RedirectToAction(nameof(Index));
     }
 }
+
