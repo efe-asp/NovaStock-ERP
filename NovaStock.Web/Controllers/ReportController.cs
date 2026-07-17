@@ -220,3 +220,4 @@ public class ReportController : Controller
             $"NovaStock_Satis_{DateTime.Now:yyyyMMdd_HHmm}.xlsx");
     }
 }
+
