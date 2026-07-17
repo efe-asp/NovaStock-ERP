@@ -165,3 +165,4 @@ public class PromotionController : Controller
             .Select(c => new SelectListItem(c.Name, c.Id.ToString()))
             .ToListAsync();
 }
+
