@@ -351,3 +351,4 @@ static async Task SeedDatabaseAsync(WebApplication app)
     }
     await context.SaveChangesAsync();
 }
+
