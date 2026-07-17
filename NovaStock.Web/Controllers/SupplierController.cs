@@ -257,3 +257,4 @@ public class SupplierController : Controller
         return RedirectToAction(nameof(Index));
     }
 }
+
