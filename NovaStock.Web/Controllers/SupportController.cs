@@ -480,3 +480,4 @@ public class SupportController : Controller
         return JsonSerializer.Serialize(new[] { attachment });
     }
 }
+
