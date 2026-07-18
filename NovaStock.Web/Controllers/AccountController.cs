@@ -119,6 +119,113 @@ public class AccountController : Controller
         return RedirectToAction(nameof(Login));
     }
 
+    // ─── PROFİL BİLGİSİ GETİR (AJAX) ────────────────────────────────────────────
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> GetProfileInfo()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var role  = roles.FirstOrDefault() ?? "Dealer";
+
+        string roleLabel = role switch
+        {
+            "Admin"           => "Administrator",
+            "Dealer"          => "Ana Bayi",
+            "DealerPurchase"  => "Satın Alma Personeli",
+            "DealerFinance"   => "Muhasebe Personeli",
+            _                 => role
+        };
+
+        string tierLabel = user.Tier switch
+        {
+            DealerTier.Gold   => "Gold",
+            DealerTier.Silver => "Silver",
+            _                 => "Bronze"
+        };
+
+        return Json(new
+        {
+            fullName     = user.FullName,
+            email        = user.Email,
+            phone        = user.PhoneNumber ?? user.Phone,
+            address      = user.Address,
+            role,
+            roleLabel,
+            tier         = tierLabel,
+            isAdmin      = User.IsInRole("Admin"),
+            isMainDealer = User.IsInRole("Dealer"),
+            themeMode    = user.ThemeMode ?? "light",
+            accentColor  = user.AccentColor ?? "#6366f1",
+            companyName  = user.CompanyName
+        });
+    }
+
+    // ─── PROFİL GÜNCELLE (AJAX POST) ─────────────────────────────────────────────
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileViewModel vm)
+    {
+        if (!ModelState.IsValid)
+            return Json(new { success = false, message = "Form verisi geçersiz." });
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Json(new { success = false, message = "Kullanıcı bulunamadı." });
+
+        user.FullName    = vm.FullName;
+        user.PhoneNumber = vm.PhoneNumber;
+        user.Address     = vm.Address;
+
+        var result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("Profil güncellendi: {User}", user.Email);
+            return Json(new { success = true, message = "Profiliniz başarıyla güncellendi." });
+        }
+
+        return Json(new { success = false, message = string.Join(", ", result.Errors.Select(e => e.Description)) });
+    }
+
+    // ─── ŞİFRE DEĞİŞTİR (AJAX POST) ─────────────────────────────────────────────
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordViewModel vm)
+    {
+        if (!ModelState.IsValid)
+            return Json(new { success = false, message = "Form verisi geçersiz." });
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Json(new { success = false, message = "Kullanıcı bulunamadı." });
+
+        var result = await _userManager.ChangePasswordAsync(user, vm.CurrentPassword, vm.NewPassword);
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("Şifre değiştirildi: {User}", user.Email);
+            return Json(new { success = true, message = "Şifreniz başarıyla değiştirildi." });
+        }
+
+        var errorMsg = result.Errors.FirstOrDefault()?.Description ?? "Şifre değiştirilemedi.";
+        errorMsg = errorMsg.Contains("Incorrect password") ? "Mevcut şifreniz hatalı." : errorMsg;
+        return Json(new { success = false, message = errorMsg });
+    }
+
+    // ─── TEMA TERCİHİ KAYDET (AJAX POST) ─────────────────────────────────────────
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> SaveThemePreference([FromBody] SaveThemeViewModel vm)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null) return Json(new { success = false });
+
+        user.ThemeMode   = vm.ThemeMode;
+        user.AccentColor = vm.AccentColor;
+        await _userManager.UpdateAsync(user);
+
+        return Json(new { success = true });
+    }
+
     // ─── Roller oluştur (ilk kurulum) ────────────────────────────────────────────
     private async Task EnsureRolesAsync()
     {
@@ -129,4 +236,3 @@ public class AccountController : Controller
         }
     }
 }
-
