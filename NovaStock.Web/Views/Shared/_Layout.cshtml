@@ -43,6 +43,30 @@
             --transition:    0.25s cubic-bezier(.4,0,.2,1);
         }
 
+        /* ── Dark Mode ── */
+        [data-theme="dark"] {
+            --bg-primary:    #0f1117;
+            --bg-secondary:  #1a1d2e;
+            --bg-card:       rgba(26,29,46,0.95);
+            --bg-card-hover: rgba(30,34,52,1);
+            --border-glass:  rgba(255,255,255,0.08);
+            --text-primary:  #e2e8f0;
+            --text-secondary:#cbd5e1;
+            --text-muted:    #94a3b8;
+        }
+        [data-theme="dark"] body { background: var(--bg-primary); color: var(--text-primary); }
+        [data-theme="dark"] .sidebar { background: var(--bg-secondary); border-color: var(--border-glass); }
+        [data-theme="dark"] .top-navbar { background: rgba(26,29,46,0.9); border-color: var(--border-glass); }
+        [data-theme="dark"] .glass-card { background: var(--bg-card); border-color: var(--border-glass); }
+        [data-theme="dark"] .nova-table thead th { background: rgba(99,102,241,0.08); }
+        [data-theme="dark"] .nova-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+        [data-theme="dark"] .form-nova { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-glass); }
+        [data-theme="dark"] .form-nova option { background: var(--bg-secondary); }
+        [data-theme="dark"] #cmdPalette { background: var(--bg-secondary); }
+        [data-theme="dark"] #cmdInput { color: var(--text-primary); background: transparent; }
+        [data-theme="dark"] .notif-dropdown { background: var(--bg-secondary); border-color: var(--border-glass); }
+        [data-theme="dark"] .nova-toast { background: var(--bg-secondary); border-color: var(--border-glass); }
+
         /* �� Reset & Base ��������������������������������������������������� */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { height: 100%; }
@@ -142,15 +166,133 @@
         }
         .sidebar-user {
             display: flex; align-items: center; gap: 10px;
+            cursor: pointer;
+            padding: 8px 10px;
+            border-radius: 12px;
+            transition: background var(--transition);
         }
+        .sidebar-user:hover { background: rgba(99,102,241,0.08); }
         .sidebar-user .user-avatar {
             width: 36px; height: 36px; border-radius: 50%;
             background: linear-gradient(135deg, var(--accent), var(--cyan));
             display: flex; align-items: center; justify-content: center;
             font-size: 13px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
         }
         .sidebar-user .user-name { font-size: 13px; font-weight: 600; }
         .sidebar-user .user-role { font-size: 11px; color: var(--text-muted); }
+
+        /* ── Profil Paneli ── */
+        #profilePanel {
+            position: fixed;
+            bottom: 80px;
+            left: 16px;
+            width: 300px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(99,102,241,0.1);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: profileSlideUp 0.25s cubic-bezier(.34,1.56,.64,1);
+        }
+        @@keyframes profileSlideUp {
+            from { opacity: 0; transform: translateY(12px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .prof-header {
+            padding: 18px 20px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(14,165,233,0.08));
+            border-bottom: 1px solid var(--border-glass);
+        }
+        .prof-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-glass);
+        }
+        .prof-tab {
+            flex: 1; text-align: center;
+            padding: 10px 0;
+            font-size: 11px; font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .prof-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .prof-tab-content { display: none; padding: 16px 20px; }
+        .prof-tab-content.active { display: block; }
+        .prof-field { margin-bottom: 12px; }
+        .prof-field label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
+        .prof-field input {
+            width: 100%; padding: 8px 12px;
+            border: 1.5px solid var(--border-glass);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .prof-field input:focus { outline: none; border-color: var(--accent); }
+        .prof-btn {
+            width: 100%; padding: 9px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .prof-btn-primary { background: linear-gradient(135deg, var(--accent), #4f46e5); color: #fff; }
+        .prof-btn-primary:hover { box-shadow: 0 4px 15px var(--accent-glow); }
+        .prof-btn-danger { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+        .prof-btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .prof-msg { font-size: 12px; padding: 8px 10px; border-radius: 8px; margin-top: 8px; display: none; }
+        .prof-msg.ok  { background: rgba(16,185,129,0.12); color: var(--green); }
+        .prof-msg.err { background: rgba(239,68,68,0.12); color: var(--red); }
+        .accent-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+        .accent-swatch {
+            width: 28px; height: 28px; border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .accent-swatch:hover { transform: scale(1.15); }
+        .accent-swatch.active { border-color: var(--text-primary); box-shadow: 0 0 0 2px rgba(255,255,255,0.8); }
+        .theme-toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .theme-toggle-btn {
+            background: var(--bg-primary);
+            border: 1.5px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 12px; font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+            font-family: inherit;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .theme-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .tier-bar-wrap { margin-top: 6px; }
+        .tier-bar-bg { background: var(--bg-primary); border-radius: 8px; height: 8px; overflow: hidden; }
+        .tier-bar-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--accent), var(--cyan)); transition: width 1s ease; }
+        .quick-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 13px; font-weight: 500;
+            transition: background 0.15s;
+            margin-bottom: 4px;
+        }
+        .quick-link:hover { background: rgba(99,102,241,0.08); color: var(--accent); }
+        .quick-link i { width: 18px; text-align: center; color: var(--accent); }
 
         /* �� Top Navbar ���������������������������������������������������� */
         .top-navbar {
@@ -564,23 +706,135 @@
             </div>
         }
         <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <div class="user-avatar">
+            <div class="sidebar-user" id="profileTrigger" onclick="toggleProfilePanel()" title="Profil & Ayarlar">
+                <div class="user-avatar" id="sidebarAvatar">
                     @(User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "N")
                 </div>
-                <div>
-                    <div class="user-name">@User.Identity?.Name</div>
-                    <div class="user-role">@(User.IsInRole("Admin") ? "Administrator" : "Bayi")</div>
+                <div style="flex:1;min-width:0">
+                    <div class="user-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@User.Identity?.Name</div>
+                    <div class="user-role">@(User.IsInRole("Admin") ? "Administrator" : User.IsInRole("DealerFinance") ? "Muhasebe Personeli" : User.IsInRole("DealerPurchase") ? "Satın Alma Personeli" : "Bayi")</div>
                 </div>
-                <form method="post" action="/Account/Logout" style="margin-left:auto">
+                <i class="fa-solid fa-ellipsis-vertical" style="color:var(--text-muted);font-size:14px;margin-left:4px"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Profil Paneli ─────────────────────────────────────────────────────── -->
+    <div id="profilePanel">
+        <!-- Header -->
+        <div class="prof-header">
+            <div style="display:flex;align-items:center;gap:12px">
+                <div id="panelAvatar" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0"></div>
+                <div style="min-width:0">
+                    <div id="panelName" style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+                    <div id="panelEmail" style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+                    <div id="panelRoleBadge" style="margin-top:4px"></div>
+                </div>
+                <form method="post" action="/Account/Logout" style="margin-left:auto;flex-shrink:0">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="navbar-action-btn" title="Çıkış">
-                        <i class="fa-solid fa-right-from-bracket"></i>
+                    <button type="submit" class="navbar-action-btn" title="Çıkış Yap" style="width:32px;height:32px;border-radius:8px">
+                        <i class="fa-solid fa-right-from-bracket" style="font-size:13px"></i>
                     </button>
                 </form>
             </div>
         </div>
-    </nav>
+
+        <!-- Sekmeler -->
+        <div class="prof-tabs">
+            <div class="prof-tab active" onclick="switchProfTab('profil')">👤 Profil</div>
+            <div class="prof-tab" onclick="switchProfTab('guvenlik')">🔑 Güvenlik</div>
+            <div class="prof-tab" onclick="switchProfTab('tema')">🎨 Tema</div>
+            <div class="prof-tab" onclick="switchProfTab('hizli')">⚡ Hızlı</div>
+        </div>
+
+        <!-- Sekme: Profil -->
+        <div id="tab-profil" class="prof-tab-content active">
+            <div class="prof-field">
+                <label>Ad Soyad</label>
+                <input type="text" id="profFullName" placeholder="Ad Soyad" />
+            </div>
+            <div class="prof-field">
+                <label>Telefon</label>
+                <input type="tel" id="profPhone" placeholder="+90 5xx xxx xx xx" />
+            </div>
+            <div class="prof-field">
+                <label>Adres</label>
+                <input type="text" id="profAddress" placeholder="Adres bilgisi" />
+            </div>
+            <button class="prof-btn prof-btn-primary" onclick="saveProfile()"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
+            <div class="prof-msg" id="profMsg"></div>
+        </div>
+
+        <!-- Sekme: Güvenlik -->
+        <div id="tab-guvenlik" class="prof-tab-content">
+            <div class="prof-field">
+                <label>Mevcut Şifre</label>
+                <input type="password" id="pwCurrent" placeholder="••••••••" />
+            </div>
+            <div class="prof-field">
+                <label>Yeni Şifre</label>
+                <input type="password" id="pwNew" placeholder="En az 6 karakter" />
+            </div>
+            <div class="prof-field">
+                <label>Yeni Şifre Tekrar</label>
+                <input type="password" id="pwConfirm" placeholder="••••••••" />
+            </div>
+            <button class="prof-btn prof-btn-primary" onclick="changePassword()"><i class="fa-solid fa-lock"></i> Şifreyi Değiştir</button>
+            <div class="prof-msg" id="pwMsg"></div>
+        </div>
+
+        <!-- Sekme: Tema -->
+        <div id="tab-tema" class="prof-tab-content">
+            <div class="theme-toggle-row">
+                <span style="font-size:13px;font-weight:600">Mod</span>
+                <div style="display:flex;gap:6px">
+                    <button class="theme-toggle-btn" id="btnLight" onclick="applyTheme('light')"><i class="fa-solid fa-sun"></i> Açık</button>
+                    <button class="theme-toggle-btn" id="btnDark" onclick="applyTheme('dark')"><i class="fa-solid fa-moon"></i> Koyu</button>
+                </div>
+            </div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:10px">Vurgu Rengi</div>
+            <div class="accent-swatches">
+                <div class="accent-swatch" data-color="#6366f1" style="background:#6366f1" onclick="applyAccent('#6366f1')" title="İndigo"></div>
+                <div class="accent-swatch" data-color="#0ea5e9" style="background:#0ea5e9" onclick="applyAccent('#0ea5e9')" title="Mavi"></div>
+                <div class="accent-swatch" data-color="#10b981" style="background:#10b981" onclick="applyAccent('#10b981')" title="Yeşil"></div>
+                <div class="accent-swatch" data-color="#f59e0b" style="background:#f59e0b" onclick="applyAccent('#f59e0b')" title="Turuncu"></div>
+                <div class="accent-swatch" data-color="#ef4444" style="background:#ef4444" onclick="applyAccent('#ef4444')" title="Kırmızı"></div>
+                <div class="accent-swatch" data-color="#ec4899" style="background:#ec4899" onclick="applyAccent('#ec4899')" title="Pembe"></div>
+                <div class="accent-swatch" data-color="#8b5cf6" style="background:#8b5cf6" onclick="applyAccent('#8b5cf6')" title="Mor"></div>
+            </div>
+            <div style="margin-top:14px;font-size:11px;color:var(--text-muted)">Tercihleriniz otomatik kaydedilir.</div>
+        </div>
+
+        <!-- Sekme: Hızlı Linkler -->
+        <div id="tab-hizli" class="prof-tab-content">
+            <div id="dealerInfoPanel" style="display:none;margin-bottom:14px">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:8px">Bayi Bilgisi</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                    <div id="panelTierBadge"></div>
+                    <span id="panelCompany" style="font-size:12px;color:var(--text-muted)"></span>
+                </div>
+                <div class="tier-bar-wrap">
+                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:4px">
+                        <span>Kredi Kullanımı</span>
+                        <a href="/Dealer/Statement" style="color:var(--accent);text-decoration:none;font-size:11px">Ekstre →</a>
+                    </div>
+                    <div class="tier-bar-bg"><div class="tier-bar-fill" id="tierBarFill" style="width:0%"></div></div>
+                </div>
+            </div>
+            <a href="/Support" class="quick-link"><i class="fa-solid fa-headset"></i> Destek Taleplerim</a>
+            <a href="/Support/Create" class="quick-link"><i class="fa-solid fa-plus-circle"></i> Yeni Destek Talebi</a>
+            <div id="teamLink" style="display:none">
+                <a href="/Dealer/TeamManagement" class="quick-link"><i class="fa-solid fa-users-gear"></i> Ekip Yönetimi</a>
+            </div>
+            <div id="adminLinks" style="display:none">
+                <a href="/Dealer" class="quick-link"><i class="fa-solid fa-users"></i> Tüm Bayiler</a>
+                <a href="/Settings" class="quick-link"><i class="fa-solid fa-gear"></i> Sistem Ayarları</a>
+                <a href="/Audit" class="quick-link"><i class="fa-solid fa-shield-halved"></i> Denetim Günlüğü</a>
+            </div>
+        </div>
+    </div>
+    <!-- Profil Panel Overlay -->
+    <div id="profileOverlay" style="display:none;position:fixed;inset:0;z-index:1999" onclick="closeProfilePanel()"></div>
 
     <!-- ── Top Navbar ──────────────────────────────────────────────────────── -->
     <header class="top-navbar">
@@ -804,6 +1058,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchNotifications();
             fetchTicketCounts();
+            initThemeFromStorage();
+            loadProfileData();
         });
 
         const connection = new signalR.HubConnectionBuilder()
@@ -861,6 +1117,237 @@
             }
         }
         startSignalR();
+
+        // ── Profil Panel ─────────────────────────────────────────────────────────
+        let _profData = null;
+        let _currentTheme = localStorage.getItem('nova_theme') || 'light';
+        let _currentAccent = localStorage.getItem('nova_accent') || '#6366f1';
+
+        function initThemeFromStorage() {
+            const t = localStorage.getItem('nova_theme') || 'light';
+            const a = localStorage.getItem('nova_accent') || '#6366f1';
+            document.documentElement.setAttribute('data-theme', t);
+            applyAccentColor(a, false);
+        }
+
+        function toggleProfilePanel() {
+            const panel   = document.getElementById('profilePanel');
+            const overlay = document.getElementById('profileOverlay');
+            const isOpen  = panel.style.display === 'flex';
+            if (isOpen) {
+                closeProfilePanel();
+            } else {
+                panel.style.display = 'flex';
+                overlay.style.display = 'block';
+            }
+        }
+
+        function closeProfilePanel() {
+            document.getElementById('profilePanel').style.display = 'none';
+            document.getElementById('profileOverlay').style.display = 'none';
+        }
+
+        function switchProfTab(name) {
+            document.querySelectorAll('.prof-tab').forEach((t, i) => {
+                const tabs = ['profil', 'guvenlik', 'tema', 'hizli'];
+                t.classList.toggle('active', tabs[i] === name);
+            });
+            document.querySelectorAll('.prof-tab-content').forEach(c => c.classList.remove('active'));
+            const target = document.getElementById('tab-' + name);
+            if (target) target.classList.add('active');
+        }
+
+        async function loadProfileData() {
+            try {
+                const res  = await fetch('/Account/GetProfileInfo');
+                const data = await res.json();
+                _profData  = data;
+
+                // Header
+                const avatar = data.fullName ? data.fullName[0].toUpperCase() : '?';
+                const panelAvatar = document.getElementById('panelAvatar');
+                const sidebarAvatar = document.getElementById('sidebarAvatar');
+                if (panelAvatar) panelAvatar.textContent = avatar;
+                if (sidebarAvatar) sidebarAvatar.textContent = avatar;
+
+                const panelName  = document.getElementById('panelName');
+                const panelEmail = document.getElementById('panelEmail');
+                if (panelName)  panelName.textContent  = data.fullName || '';
+                if (panelEmail) panelEmail.textContent = data.email || '';
+
+                // Rol rozeti
+                const roleBadge = document.getElementById('panelRoleBadge');
+                if (roleBadge) {
+                    const color = data.role === 'Admin' ? 'badge-red' :
+                                  data.role === 'Dealer' ? 'badge-purple' :
+                                  data.role === 'DealerFinance' ? 'badge-green' : 'badge-cyan';
+                    roleBadge.innerHTML = `<span class="badge-nova ${color}" style="font-size:10px">${data.roleLabel}</span>`;
+                }
+
+                // Profil sekmesi inputları
+                const fn = document.getElementById('profFullName');
+                const ph = document.getElementById('profPhone');
+                const ad = document.getElementById('profAddress');
+                if (fn) fn.value = data.fullName || '';
+                if (ph) ph.value = data.phone    || '';
+                if (ad) ad.value = data.address  || '';
+
+                // Tema
+                updateThemeButtons(_currentTheme);
+                updateSwatchActive(_currentAccent);
+
+                // Bayi bilgisi (Hızlı sekme)
+                const dealerPanel = document.getElementById('dealerInfoPanel');
+                const teamLink    = document.getElementById('teamLink');
+                const adminLinks  = document.getElementById('adminLinks');
+
+                if (data.isAdmin) {
+                    if (adminLinks) adminLinks.style.display = 'block';
+                } else if (data.isMainDealer) {
+                    if (dealerPanel) dealerPanel.style.display = 'block';
+                    if (teamLink)    teamLink.style.display    = 'block';
+                    const tierBadge = document.getElementById('panelTierBadge');
+                    const tierColors = { Gold: 'badge-gold', Silver: 'badge-silver', Bronze: 'badge-bronze' };
+                    if (tierBadge) tierBadge.innerHTML = `<span class="badge-nova ${tierColors[data.tier] || 'badge-gray'}">${data.tier}</span>`;
+                    const panelComp = document.getElementById('panelCompany');
+                    if (panelComp) panelComp.textContent = data.companyName || '';
+                }
+
+                // Kullanıcının kaydedilmiş temasını uygula (DB'den al)
+                if (data.themeMode && !localStorage.getItem('nova_theme_synced')) {
+                    localStorage.setItem('nova_theme', data.themeMode);
+                    localStorage.setItem('nova_accent', data.accentColor || '#6366f1');
+                    localStorage.setItem('nova_theme_synced', '1');
+                    applyTheme(data.themeMode, false);
+                    applyAccentColor(data.accentColor || '#6366f1', false);
+                }
+            } catch(e) { console.warn('Profil yüklenemedi', e); }
+        }
+
+        async function saveProfile() {
+            const fn = document.getElementById('profFullName')?.value || '';
+            const ph = document.getElementById('profPhone')?.value || '';
+            const ad = document.getElementById('profAddress')?.value || '';
+            const msg = document.getElementById('profMsg');
+
+            try {
+                const res  = await fetch('/Account/UpdateProfile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
+                    body: JSON.stringify({ fullName: fn, phoneNumber: ph, address: ad })
+                });
+                const data = await res.json();
+                showProfMsg(msg, data.success, data.message);
+                if (data.success) {
+                    const panelName = document.getElementById('panelName');
+                    if (panelName) panelName.textContent = fn;
+                    const sidebarAvatar = document.getElementById('sidebarAvatar');
+                    const panelAvatar   = document.getElementById('panelAvatar');
+                    if (fn && sidebarAvatar) sidebarAvatar.textContent = fn[0].toUpperCase();
+                    if (fn && panelAvatar)   panelAvatar.textContent   = fn[0].toUpperCase();
+                }
+            } catch(e) { showProfMsg(msg, false, 'Bağlantı hatası.'); }
+        }
+
+        async function changePassword() {
+            const cur = document.getElementById('pwCurrent')?.value || '';
+            const nw  = document.getElementById('pwNew')?.value || '';
+            const cnf = document.getElementById('pwConfirm')?.value || '';
+            const msg = document.getElementById('pwMsg');
+
+            if (nw !== cnf) { showProfMsg(msg, false, 'Şifreler eşleşmiyor.'); return; }
+            if (nw.length < 6) { showProfMsg(msg, false, 'Şifre en az 6 karakter olmalı.'); return; }
+
+            try {
+                const res  = await fetch('/Account/ChangePassword', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
+                    body: JSON.stringify({ currentPassword: cur, newPassword: nw, confirmNewPassword: cnf })
+                });
+                const data = await res.json();
+                showProfMsg(msg, data.success, data.message);
+                if (data.success) {
+                    document.getElementById('pwCurrent').value = '';
+                    document.getElementById('pwNew').value     = '';
+                    document.getElementById('pwConfirm').value = '';
+                }
+            } catch(e) { showProfMsg(msg, false, 'Bağlantı hatası.'); }
+        }
+
+        function applyTheme(mode, save = true) {
+            _currentTheme = mode;
+            document.documentElement.setAttribute('data-theme', mode);
+            localStorage.setItem('nova_theme', mode);
+            updateThemeButtons(mode);
+            if (save) saveThemeToServer();
+        }
+
+        function updateThemeButtons(mode) {
+            const btnL = document.getElementById('btnLight');
+            const btnD = document.getElementById('btnDark');
+            if (!btnL || !btnD) return;
+            btnL.style.borderColor = mode === 'light' ? 'var(--accent)' : 'var(--border-glass)';
+            btnL.style.color       = mode === 'light' ? 'var(--accent)' : 'var(--text-primary)';
+            btnD.style.borderColor = mode === 'dark'  ? 'var(--accent)' : 'var(--border-glass)';
+            btnD.style.color       = mode === 'dark'  ? 'var(--accent)' : 'var(--text-primary)';
+        }
+
+        function applyAccent(hex, save = true) {
+            _currentAccent = hex;
+            applyAccentColor(hex, save);
+        }
+
+        function applyAccentColor(hex, save = true) {
+            // hex to RGB for glow
+            const r = parseInt(hex.slice(1,3),16);
+            const g = parseInt(hex.slice(3,5),16);
+            const b = parseInt(hex.slice(5,7),16);
+            const darker = shadeColor(hex, -15);
+            document.documentElement.style.setProperty('--accent', hex);
+            document.documentElement.style.setProperty('--accent-light', darker);
+            document.documentElement.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.25)`);
+            localStorage.setItem('nova_accent', hex);
+            updateSwatchActive(hex);
+            if (save) saveThemeToServer();
+        }
+
+        function shadeColor(color, percent) {
+            let R = parseInt(color.slice(1,3),16);
+            let G = parseInt(color.slice(3,5),16);
+            let B = parseInt(color.slice(5,7),16);
+            R = Math.min(255, Math.max(0, R + (R * percent / 100)));
+            G = Math.min(255, Math.max(0, G + (G * percent / 100)));
+            B = Math.min(255, Math.max(0, B + (B * percent / 100)));
+            return '#' + [R,G,B].map(v => Math.round(v).toString(16).padStart(2,'0')).join('');
+        }
+
+        function updateSwatchActive(hex) {
+            document.querySelectorAll('.accent-swatch').forEach(s => {
+                s.classList.toggle('active', s.dataset.color.toLowerCase() === hex.toLowerCase());
+            });
+        }
+
+        async function saveThemeToServer() {
+            try {
+                await fetch('/Account/SaveThemePreference', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
+                    body: JSON.stringify({ themeMode: _currentTheme, accentColor: _currentAccent })
+                });
+            } catch(e) {}
+        }
+
+        function showProfMsg(el, ok, msg) {
+            if (!el) return;
+            el.className = 'prof-msg ' + (ok ? 'ok' : 'err');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+
+        function getAntiForgeryToken() {
+            return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        }
 
         // ── Komut Paleti (Ctrl+K) ──────────────────────────────────────────────
         const COMMANDS = [
