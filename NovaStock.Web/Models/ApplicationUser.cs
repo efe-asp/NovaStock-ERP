@@ -40,6 +40,13 @@ public class ApplicationUser : IdentityUser
     /// </summary>
     public decimal? CreditLimitOverride { get; set; }
 
+    // ─── UI Tercihleri ─────────────────────────────────────────────────────────
+    /// <summary>Tema tercihi: "light" veya "dark". Null ise varsayılan light.</summary>
+    public string? ThemeMode { get; set; }
+
+    /// <summary>Vurgu rengi hex kodu. Örn: "#6366f1". Null ise varsayılan mor.</summary>
+    public string? AccentColor { get; set; }
+
     // ─── Navigation ───────────────────────────────────────────────────────────
     public ICollection<Order> Orders { get; set; } = [];
     public ICollection<LedgerEntry> LedgerEntries { get; set; } = [];
