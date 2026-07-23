@@ -9,3 +9,4 @@
 - docs: add notes on UI components (2026-07-23 21:14:18)
 - docs: document deployment steps (2026-07-23 21:15:18)
 - docs: list pending refactoring tasks (2026-07-23 21:16:18)
+- docs: add notes on error handling (2026-07-23 21:17:18)
