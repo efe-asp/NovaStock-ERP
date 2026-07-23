@@ -13,3 +13,4 @@
 - docs: review performance optimizations (2026-07-23 21:18:18)
 - docs: document accessibility guidelines (2026-07-23 21:19:18)
 - docs: list potential new features (2026-07-23 21:20:18)
+- docs: update project roadmap (2026-07-23 21:21:18)
