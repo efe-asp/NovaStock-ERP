@@ -5,3 +5,4 @@
 - docs: add notes on database schema (2026-07-23 21:10:17)
 - docs: outline routing strategy (2026-07-23 21:11:17)
 - docs: update API integration plan (2026-07-23 21:12:17)
+- docs: review authentication flow (2026-07-23 21:13:18)
