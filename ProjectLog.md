@@ -7,3 +7,4 @@
 - docs: update API integration plan (2026-07-23 21:12:17)
 - docs: review authentication flow (2026-07-23 21:13:18)
 - docs: add notes on UI components (2026-07-23 21:14:18)
+- docs: document deployment steps (2026-07-23 21:15:18)
